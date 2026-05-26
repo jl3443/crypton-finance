@@ -1,120 +1,172 @@
 /**
- * View-state machine for the HR Concierge demo.
- * Inspired by Predictive-Risk-Agent2's discriminated-union approach:
- * no real router, just a typed `view` field that App.tsx switches on.
+ * View-state machine for the Crypton Finance AI demo.
+ * Discriminated-union approach (no real router) — App.tsx switches on `view.kind`.
+ *
+ * Persona: single CFO (Wei Chen, Group CFO, Crypton).
+ * Three flows: accounting · treasury · bp.
+ *
+ * Persistence: approvals + uploads are kept in sessionStorage so the demo
+ * survives page reloads (handy when showing the screen). Clearing the tab
+ * resets the demo cleanly.
  */
 
 import * as React from "react";
 
-export type Persona = "hrbp" | "employee";
-
-export type View =
-  | { kind: "login"; nextPersona?: Persona }
-  | { kind: "dashboard" }
-  | { kind: "insights" }
-  | { kind: "compliance-radar" }
-  | { kind: "documents"; tab: "letters" | "policies" }
-  | { kind: "workspace"; flow: "uc1" | "uc2" | "uc3" | "uc4" }
-  | { kind: "doc"; id: DocId }
-  | { kind: "logout" }
-  | { kind: "employee-landing" }
-  | { kind: "employee-chat" };
+export type FlowId = "accounting" | "treasury" | "bp";
 
 export type DocId =
-  | "working-hours-act"
-  | "handbook-redline"
-  | "employee-announcement"
-  | "works-council-notice"
-  | "termination-letter"
-  | "comp-deliverables"
-  | "employment-verification"
-  | "coverage-plan";
+  // Accounting
+  | "oracle-gl-extract"
+  | "trial-balance-recon"
+  | "ap-aging"
+  | "ar-aging"
+  | "journal-entry-proposal"
+  | "variance-memo"
+  | "board-financial-report"
+  | "close-audit-trail"
+  // Treasury
+  | "wallet-balance-sheet"
+  | "bank-account-summary"
+  | "transaction-ledger-24h"
+  | "anomaly-brief"
+  | "rebalancing-plan"
+  | "daily-treasury-brief"
+  // Business Partner
+  | "business-line-pnl"
+  | "revenue-waterfall"
+  | "cost-breakdown"
+  | "scenario-analysis"
+  | "synergy-map"
+  | "bp-strategic-memo"
+  | "bp-board-deck";
 
-export type FlowId = "uc1" | "uc2" | "uc3" | "uc4";
+export type View =
+  | { kind: "login" }
+  | { kind: "hub" }
+  | { kind: "workspace"; flow: FlowId }
+  | { kind: "doc"; id: DocId }
+  | { kind: "export"; flow: FlowId };
+
+export type Approval = {
+  flow: FlowId;
+  step: number;
+  approvedAt: string; // ISO
+};
+
+export type UploadRecord = {
+  flow: FlowId;
+  filename: string;
+  sheetCount: number;
+  rowCount: number;
+  uploadedAt: string; // ISO
+};
+
+export type Anomaly = {
+  id: string;
+  cleared: boolean;
+  clearedBy?: string;
+};
 
 export type FlowProgress = {
   activeStep: number;
   approved: boolean;
 };
 
-/**
- * One escalation = an Employee chat said "escalate". Surfaced to the HRBP
- * dashboard as a bell badge so the demo can show the round-trip from
- * self-service into a human-routed queue.
- */
-export type Escalation = {
-  id: string;
-  employee: string;
-  reason: string;
-  /** Display string like "just now", "2 min ago". */
-  at: string;
-};
-
 export type AppState = {
-  persona: Persona;
   view: View;
-  /** Stack of previous views (most recent at end). Drives the back button. */
   history: View[];
-  /**
-   * Per-flow workspace progress, lifted out of the workspace components so
-   * navigating to a doc preview and back doesn't restart the auto-advance.
-   */
+  cfo: { name: string; email: string };
   flowProgress: Record<FlowId, FlowProgress>;
-  /**
-   * When set, a full-screen completion modal is shown. Clicking its CTA
-   * navigates the user back to the dashboard and clears this flag.
-   */
-  completionFlow: FlowId | null;
-  /** Live queue of employee escalations, surfaced on the HRBP topbar. */
-  escalations: Escalation[];
+  approvals: Approval[];
+  uploads: UploadRecord[];
+  anomalies: Anomaly[];
 };
 
 export type AppActions = {
   go: (view: View) => void;
   back: () => void;
-  signIn: (persona: Persona) => void;
+  signIn: () => void;
   signOut: () => void;
   setFlowProgress: (flow: FlowId, next: Partial<FlowProgress>) => void;
-  showCompletion: (flow: FlowId) => void;
-  clearCompletion: () => void;
-  addEscalation: (e: Omit<Escalation, "id" | "at">) => void;
-  clearEscalations: () => void;
+  recordApproval: (flow: FlowId, step: number) => void;
+  recordUpload: (rec: Omit<UploadRecord, "uploadedAt">) => void;
+  clearAnomaly: (id: string, clearedBy: string) => void;
 };
+
+const CFO = {
+  name: "Wei Chen",
+  email: "wei.chen@crypton.exchange",
+};
+
+const INITIAL_PROGRESS: Record<FlowId, FlowProgress> = {
+  accounting: { activeStep: 0, approved: false },
+  treasury: { activeStep: 0, approved: false },
+  bp: { activeStep: 0, approved: false },
+};
+
+const SESSION_KEY = "crypton-finance-state-v1";
+
+type PersistShape = Pick<
+  AppState,
+  "approvals" | "uploads" | "anomalies" | "flowProgress"
+>;
+
+function loadPersisted(): PersistShape {
+  if (typeof window === "undefined") {
+    return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
+  }
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    if (!raw) {
+      return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
+    }
+    const parsed = JSON.parse(raw) as Partial<PersistShape>;
+    return {
+      approvals: parsed.approvals ?? [],
+      uploads: parsed.uploads ?? [],
+      anomalies: parsed.anomalies ?? [],
+      flowProgress: parsed.flowProgress ?? INITIAL_PROGRESS,
+    };
+  } catch {
+    return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
+  }
+}
 
 const Ctx = React.createContext<(AppState & AppActions) | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = React.useState<AppState>({
-    persona: "hrbp",
-    view: { kind: "login" },
-    history: [],
-    flowProgress: {
-      uc1: { activeStep: 0, approved: false },
-      uc2: { activeStep: 0, approved: false },
-      uc3: { activeStep: 0, approved: false },
-      uc4: { activeStep: 0, approved: false },
-    },
-    completionFlow: null,
-    escalations: [],
+  const [state, setState] = React.useState<AppState>(() => {
+    const persisted = loadPersisted();
+    return {
+      view: { kind: "login" },
+      history: [],
+      cfo: CFO,
+      ...persisted,
+    };
   });
+
+  // Persist mutation-bearing slices to sessionStorage on every change.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const slice: PersistShape = {
+      approvals: state.approvals,
+      uploads: state.uploads,
+      anomalies: state.anomalies,
+      flowProgress: state.flowProgress,
+    };
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(slice));
+  }, [state.approvals, state.uploads, state.anomalies, state.flowProgress]);
 
   const go = React.useCallback(
     (view: View) =>
-      setState((s) => ({
-        ...s,
-        view,
-        history: [...s.history, s.view],
-      })),
+      setState((s) => ({ ...s, view, history: [...s.history, s.view] })),
     [],
   );
 
   const back = React.useCallback(
     () =>
       setState((s) => {
-        if (s.history.length === 0) {
-          // Fallback when there's no history (deep link or page reload).
-          return { ...s, view: { kind: "dashboard" } };
-        }
+        if (s.history.length === 0) return { ...s, view: { kind: "hub" } };
         const prev = s.history[s.history.length - 1];
         return { ...s, view: prev, history: s.history.slice(0, -1) };
       }),
@@ -122,18 +174,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signIn = React.useCallback(
-    (persona: Persona) =>
+    () =>
       setState((s) => ({
         ...s,
-        persona,
-        view: persona === "hrbp" ? { kind: "dashboard" } : { kind: "employee-landing" },
+        view: { kind: "hub" },
         history: [],
-        flowProgress: {
-          uc1: { activeStep: 0, approved: false },
-          uc2: { activeStep: 0, approved: false },
-          uc3: { activeStep: 0, approved: false },
-          uc4: { activeStep: 0, approved: false },
-        },
       })),
     [],
   );
@@ -142,7 +187,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () =>
       setState((s) => ({
         ...s,
-        view: { kind: "logout" },
+        view: { kind: "login" },
         history: [],
       })),
     [],
@@ -160,34 +205,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const showCompletion = React.useCallback(
-    (flow: FlowId) => setState((s) => ({ ...s, completionFlow: flow })),
-    [],
-  );
-
-  const clearCompletion = React.useCallback(
-    () => setState((s) => ({ ...s, completionFlow: null })),
-    [],
-  );
-
-  const addEscalation = React.useCallback(
-    (e: Omit<Escalation, "id" | "at">) =>
+  const recordApproval = React.useCallback(
+    (flow: FlowId, step: number) =>
       setState((s) => ({
         ...s,
-        escalations: [
-          {
-            id: `esc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            at: "just now",
-            ...e,
-          },
-          ...s.escalations,
+        approvals: [
+          ...s.approvals,
+          { flow, step, approvedAt: new Date().toISOString() },
         ],
       })),
     [],
   );
 
-  const clearEscalations = React.useCallback(
-    () => setState((s) => ({ ...s, escalations: [] })),
+  const recordUpload = React.useCallback(
+    (rec: Omit<UploadRecord, "uploadedAt">) =>
+      setState((s) => ({
+        ...s,
+        uploads: [...s.uploads, { ...rec, uploadedAt: new Date().toISOString() }],
+      })),
+    [],
+  );
+
+  const clearAnomaly = React.useCallback(
+    (id: string, clearedBy: string) =>
+      setState((s) => ({
+        ...s,
+        anomalies: s.anomalies.map((a) =>
+          a.id === id ? { ...a, cleared: true, clearedBy } : a,
+        ),
+      })),
     [],
   );
 
@@ -200,10 +246,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         setFlowProgress,
-        showCompletion,
-        clearCompletion,
-        addEscalation,
-        clearEscalations,
+        recordApproval,
+        recordUpload,
+        clearAnomaly,
       }}
     >
       {children}

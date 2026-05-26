@@ -28,13 +28,9 @@ export function DocChrome({
   const backLabel =
     prev?.kind === "workspace"
       ? "Back to workspace"
-      : prev?.kind === "employee-chat"
-        ? "Back to chat"
-        : prev?.kind === "employee-landing"
-          ? "Back to home"
-          : prev?.kind === "compliance-radar"
-            ? "Back to compliance radar"
-            : "Back to dashboard";
+      : prev?.kind === "export"
+        ? "Back to export"
+        : "Back to hub";
 
   if (embedded) {
     // Strip the redundant "Document · " preamble so the inline title reads

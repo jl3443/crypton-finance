@@ -2,9 +2,11 @@
 @import "tailwindcss";
 
 /*
- * HR Concierge — DSM-Firmenich Design System tokens
- * Foundation tokens captured from dsm-firmenich.com (see design-system repo).
- * Extended below with AI-motion contracts for agentic UI primitives.
+ * Crypton Finance — Bloomberg-Terminal-meets-Linear light mode.
+ * Token names kept from the hr-concierge base so existing components
+ * (KPIStrip, Timeline, AIDot, AgentLiveStrip, DocChrome, PillButton)
+ * pick up the new palette without code changes. Only the values shift:
+ * mint → warm-gold-soft, sage → warm-gold, accent-green-deep → espresso.
  */
 
 @theme inline {
@@ -51,30 +53,30 @@
 
 :root {
   /* Foundation neutrals */
-  --background: #ffffff;
-  --foreground: #000000;
+  --background: #faf9f5;       /* warm off-white page bg */
+  --foreground: #0b0b0e;
 
-  --ink: #000000;
-  --ink-inverse: #ffffff;
-  --mute: #676767;
-  --divider: #f0f0f0;
+  --ink: #0b0b0e;
+  --ink-inverse: #faf9f5;
+  --mute: #6b6660;
+  --divider: #ecead9;
 
-  /* Brand surfaces */
-  --surface-mint: #c3e6e1;
-  --surface-sage: #44b4a1;
-  --surface-rose: #ccbcb8;
-  --surface-fog: #f7f7f7;
+  /* Brand surfaces — token names kept, values reframed for Crypton */
+  --surface-mint: #f5edda;     /* was DSM mint #c3e6e1 → now warm-gold soft */
+  --surface-sage: #c8a24b;     /* was DSM sage #44b4a1 → now warm gold */
+  --surface-rose: #f4e9e9;     /* flagged background — slightly warmer rose */
+  --surface-fog: #faf9f5;      /* page bg */
 
   /* Brand accents */
-  --accent-green: #277e6e;
-  --accent-green-deep: #084337;
-  --accent-navy: #123456;
-  --mark-red: #a6192e;
+  --accent-green: #c8a24b;     /* was DSM sea-green → now warm gold */
+  --accent-green-deep: #1f1b16;/* was DSM deep green → now espresso ink-deep */
+  --accent-navy: #0b0b0e;      /* now near-black */
+  --mark-red: #a6192e;         /* kept */
 
   /* Section rhythm */
   --section-pad-y: 80px;
 
-  /* Motion contracts (DSM-F captured) */
+  /* Motion contracts (preserved from hr-concierge) */
   --motion-duration-hover: 180ms;
   --motion-duration-menu: 300ms;
   --motion-duration-slideshow: 500ms;
@@ -82,7 +84,7 @@
   --motion-ease-menu: ease;
   --motion-ease-slideshow: linear;
 
-  /* AI motion extensions (same family, additive) */
+  /* AI motion extensions */
   --motion-duration-stream: 80ms;
   --motion-duration-spring: 420ms;
   --motion-duration-pulse: 1800ms;
@@ -102,10 +104,6 @@
   --cta-text-transform: none;
 }
 
-.brand-dsm-firmenich {
-  /* Default scope */
-}
-
 /* Reveal-on-scroll contract */
 [data-reveal] {
   opacity: 0;
@@ -116,69 +114,41 @@
 }
 
 /* AI pulse — agent thinking */
-@keyframes hr-pulse {
+@keyframes cx-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.35); opacity: 0.5; }
 }
 .ai-pulse {
-  animation: hr-pulse var(--motion-duration-pulse) var(--motion-ease-menu) infinite;
+  animation: cx-pulse var(--motion-duration-pulse) var(--motion-ease-menu) infinite;
 }
 
 /* Stream-in stagger (rows appear) */
-@keyframes hr-stream-in {
+@keyframes cx-stream-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .ai-stream {
-  animation: hr-stream-in var(--motion-duration-menu) var(--motion-ease-menu) backwards;
+  animation: cx-stream-in var(--motion-duration-menu) var(--motion-ease-menu) backwards;
 }
 
 /* Spring scale-in (decision card) */
-@keyframes hr-spring-in {
+@keyframes cx-spring-in {
   0% { opacity: 0; transform: scale(0.94); }
   100% { opacity: 1; transform: scale(1); }
 }
 .ai-spring {
-  animation: hr-spring-in var(--motion-duration-spring) var(--motion-ease-spring) both;
-}
-
-/* Confetti — fall + sway + rotate from above the modal */
-@keyframes hr-confetti {
-  0% {
-    transform: translate3d(0, -40px, 0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(var(--hr-confetti-x, 0px), 110vh, 0)
-      rotate(var(--hr-confetti-rot, 720deg));
-    opacity: 0;
-  }
-}
-.hr-confetti-piece {
-  position: absolute;
-  top: 0;
-  width: 8px;
-  height: 12px;
-  border-radius: 2px;
-  pointer-events: none;
-  will-change: transform, opacity;
-  animation-name: hr-confetti;
-  animation-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
-  animation-fill-mode: forwards;
+  animation: cx-spring-in var(--motion-duration-spring) var(--motion-ease-spring) both;
 }
 
 /* Typewriter caret */
-@keyframes hr-caret {
+@keyframes cx-caret {
   50% { opacity: 0; }
 }
 .ai-caret::after {
   content: "▍";
   margin-left: 1px;
   color: var(--accent-green-deep);
-  animation: hr-caret 700ms steps(1, end) infinite;
+  animation: cx-caret 700ms steps(1, end) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -199,7 +169,10 @@
   html {
     font-family: var(--font-sans);
     color: var(--ink);
-    background: var(--background);
+    /* Barely-perceptible warm-gold cast over the page — Bloomberg restraint. */
+    background:
+      linear-gradient(0deg, color-mix(in srgb, var(--surface-mint) 8%, var(--surface-fog)),
+                          color-mix(in srgb, var(--surface-mint) 8%, var(--surface-fog)));
   }
   body {
     margin: 0;
@@ -241,11 +214,12 @@
   }
 }
 
-/* Pill-CTA hover micro-shift */
+/* Pill-CTA hover micro-shift — one hover language across every CTA */
 .ui-pill {
   transition:
     background-color var(--motion-duration-hover) var(--motion-ease-hover),
     color var(--motion-duration-hover) var(--motion-ease-hover),
+    border-color var(--motion-duration-hover) var(--motion-ease-hover),
     transform var(--motion-duration-hover) var(--motion-ease-hover);
 }
 .ui-pill:hover {

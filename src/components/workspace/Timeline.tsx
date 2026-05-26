@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { FlowStep } from "@/data/scenarios";
+import type { FlowStep } from "@/data/flows";
 import { AIDot } from "@/components/ai/AIDot";
 import { Spinner } from "@/components/ai/Spinner";
 
