@@ -55,12 +55,12 @@ export const accountingFlow: FlowDef = {
       title: "Ingest Oracle GL extract",
       actor: "Agent",
       detail:
-        "Read the May Oracle Cloud GL export, parsed 247 journal lines across 12 cost centres.",
+        "Drop a month-end GL export to start the close. AI parses the workbook locally and reads every sheet.",
       time: "08:14",
       liveScripts: [
-        "Reading Oracle GL export · 14:32 timestamp",
-        "247 journal lines across 12 cost centres",
-        "Trial balance opening tie-out: $8.41B",
+        "Waiting for the month-end GL export",
+        "We'll parse it locally · nothing leaves the browser",
+        "Drop a file or use the seeded May extract",
       ],
       docs: ["oracle-gl-extract"],
     },
@@ -71,6 +71,7 @@ export const accountingFlow: FlowDef = {
         "Matched against May trial balance · 91% line-level match · 12 cost-centre variances > 5%.",
       time: "08:15",
       liveScripts: [
+        "Reading {filename} · {rows} rows across {sheets} sheets",
         "Matching against May TB · 91% line-level match",
         "Variance > 5% flagged on 12 cost centres",
         "Liquidation engine cost +18% MoM — investigating",

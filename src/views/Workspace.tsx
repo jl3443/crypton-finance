@@ -3,26 +3,53 @@ import { FLOWS } from "@/data/flows";
 import { Timeline } from "@/components/workspace/Timeline";
 import { AgentLiveStrip } from "@/components/ai/AgentLiveStrip";
 import { PillButton } from "@/components/blocks/PillButton";
+import { DropZone, type DropZoneCopy } from "@/components/upload/DropZone";
 import { cn } from "@/lib/utils";
 
 /**
  * Workspace shell — [380px Timeline | flex-1 content] with a slim top
- * progress bar and AgentLiveStrip overhead. Day-1 placeholder content
- * area; later days fill in per-step content + dashboard + ExportCeremony.
+ * progress bar and AgentLiveStrip overhead. Step 0 of accounting renders
+ * the DropZone for Excel ingest; other steps render per-step content
+ * (Day 2 has placeholder for steps 1-7 of accounting; later days fill in).
  */
+
+const DROPZONE_COPY: Partial<Record<FlowId, DropZoneCopy>> = {
+  accounting: {
+    eyebrow: "Step 1 · Ingest GL extract",
+    title: "Drop an Oracle GL export to begin",
+    sheetsHint: "Expected sheets: GL_Detail · TB_May · AP_Aging · AR_Aging.",
+    sampleFile: "/samples/crypton-may-gl-extract.xlsx",
+    sampleDisplayName: "crypton-may-gl-extract.xlsx",
+  },
+};
+
 export function Workspace({ flow }: { flow: FlowId }) {
-  const { flowProgress, setFlowProgress, go } = useApp();
+  const { flowProgress, setFlowProgress, recordUpload, uploads, go } = useApp();
   const f = FLOWS[flow];
   const activeStep = flowProgress[flow].activeStep;
   const totalSteps = f.steps.length;
   const progress = Math.min(activeStep / Math.max(totalSteps - 1, 1), 1);
   const currentStep = f.steps[activeStep];
-  const liveLines = currentStep?.liveScripts ?? [`${currentStep.title}…`];
+
+  // Latest upload for this flow, used to interpolate {filename}/{rows}/{sheets}
+  // tokens in liveScripts so the AgentLiveStrip references the real file.
+  const latestUpload = [...uploads].reverse().find((u) => u.flow === flow);
+
+  const rawLines = currentStep?.liveScripts ?? [`${currentStep.title}…`];
+  const liveLines = rawLines.map((line) =>
+    line
+      .replaceAll("{filename}", latestUpload?.filename ?? "your workbook")
+      .replaceAll("{rows}", latestUpload?.rowCount?.toLocaleString() ?? "—")
+      .replaceAll("{sheets}", String(latestUpload?.sheetCount ?? "—")),
+  );
 
   const goNext = () =>
     setFlowProgress(flow, { activeStep: Math.min(activeStep + 1, totalSteps - 1) });
   const goPrev = () =>
     setFlowProgress(flow, { activeStep: Math.max(activeStep - 1, 0) });
+
+  const showDropZone =
+    activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,54 +96,92 @@ export function Workspace({ flow }: { flow: FlowId }) {
         <main className="flex-1 min-w-0 px-10 py-8 overflow-y-auto">
           <AgentLiveStrip lines={liveLines} className="mb-6" />
 
-          {/* Placeholder card — Day 2 will replace with per-step content */}
-          <article className={cn("bg-white border border-divider rounded-md p-8 ai-spring")}>
-            <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
-              Step {activeStep + 1} of {totalSteps}
-            </div>
-            <h2 className="text-[28px] font-bold text-ink leading-[32px] tracking-[-0.01em] mb-4">
-              {currentStep.title}
-            </h2>
-            <p className="text-[15px] text-ink leading-[24px] max-w-[680px] mb-6">
-              {currentStep.detail}
-            </p>
-            {currentStep.docs && currentStep.docs.length > 0 && (
-              <div className="mb-6">
-                <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
-                  Documents this step produced
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {currentStep.docs.map((id) => (
-                    <span
-                      key={id}
-                      className="ui-pill inline-flex items-center gap-1.5 rounded-full bg-surface-fog text-ink hover:bg-surface-mint px-3 py-1.5 text-[12px] font-medium border border-divider"
-                    >
-                      {id} <span aria-hidden>↗</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3 pt-2">
-              <PillButton variant="secondary" size="md" onClick={goPrev} disabled={activeStep === 0}>
-                Back
-              </PillButton>
-              <PillButton
-                variant="primary"
-                size="md"
-                arrow
-                onClick={goNext}
-                disabled={activeStep >= totalSteps - 1}
-              >
-                {activeStep >= totalSteps - 1 ? "End of preview" : "Continue"}
-              </PillButton>
-              <span className="ml-auto text-[11px] tracking-[0.08em] uppercase text-mute font-medium">
-                Day-1 shell · per-step content lands Day 2+
-              </span>
-            </div>
-          </article>
+          {showDropZone ? (
+            <DropZone
+              copy={DROPZONE_COPY[flow]!}
+              onConfirm={(parsed) => {
+                recordUpload({
+                  flow,
+                  filename: parsed.filename,
+                  sheetCount: parsed.sheets.length,
+                  rowCount: parsed.sheets.reduce((s, sh) => s + sh.totalRows, 0),
+                });
+                setFlowProgress(flow, { activeStep: 1 });
+              }}
+            />
+          ) : (
+            <StepPlaceholderCard
+              step={currentStep}
+              activeStep={activeStep}
+              totalSteps={totalSteps}
+              onPrev={goPrev}
+              onNext={goNext}
+              onDocClick={(id) => go({ kind: "doc", id })}
+            />
+          )}
         </main>
       </div>
     </div>
+  );
+}
+
+function StepPlaceholderCard({
+  step,
+  activeStep,
+  totalSteps,
+  onPrev,
+  onNext,
+  onDocClick,
+}: {
+  step: import("@/data/flows").FlowStep;
+  activeStep: number;
+  totalSteps: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onDocClick: (id: import("@/state").DocId) => void;
+}) {
+  return (
+    <article className={cn("bg-white border border-divider rounded-md p-8 ai-spring")}>
+      <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
+        Step {activeStep + 1} of {totalSteps}
+      </div>
+      <h2 className="text-[28px] font-bold text-ink leading-[32px] tracking-[-0.01em] mb-4">
+        {step.title}
+      </h2>
+      <p className="text-[15px] text-ink leading-[24px] max-w-[680px] mb-6">{step.detail}</p>
+      {step.docs && step.docs.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
+            Documents this step produced
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {step.docs.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onDocClick(id)}
+                className="ui-pill inline-flex items-center gap-1.5 rounded-full bg-surface-fog text-ink hover:bg-surface-mint px-3 py-1.5 text-[12px] font-medium border border-divider"
+              >
+                {id} <span aria-hidden>↗</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex items-center gap-3 pt-2">
+        <PillButton variant="secondary" size="md" onClick={onPrev} disabled={activeStep === 0}>
+          Back
+        </PillButton>
+        <PillButton
+          variant="primary"
+          size="md"
+          arrow
+          onClick={onNext}
+          disabled={activeStep >= totalSteps - 1}
+        >
+          {activeStep >= totalSteps - 1 ? "End of preview" : "Continue"}
+        </PillButton>
+      </div>
+    </article>
   );
 }
