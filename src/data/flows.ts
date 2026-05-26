@@ -76,7 +76,7 @@ export const accountingFlow: FlowDef = {
         "Variance > 5% flagged on 12 cost centres",
         "Liquidation engine cost +18% MoM — investigating",
       ],
-      docs: ["trial-balance-recon"],
+      docs: ["oracle-gl-extract", "trial-balance-recon"],
     },
     {
       title: "AP aging review",

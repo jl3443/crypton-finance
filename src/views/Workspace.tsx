@@ -4,6 +4,7 @@ import { Timeline } from "@/components/workspace/Timeline";
 import { AgentLiveStrip } from "@/components/ai/AgentLiveStrip";
 import { PillButton } from "@/components/blocks/PillButton";
 import { DropZone, type DropZoneCopy } from "@/components/upload/DropZone";
+import { rememberUpload } from "@/lib/uploadCache";
 import { cn } from "@/lib/utils";
 
 /**
@@ -100,6 +101,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
             <DropZone
               copy={DROPZONE_COPY[flow]!}
               onConfirm={(parsed) => {
+                rememberUpload(flow, parsed);
                 recordUpload({
                   flow,
                   filename: parsed.filename,

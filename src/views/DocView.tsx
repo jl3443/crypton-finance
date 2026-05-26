@@ -1,51 +1,83 @@
 import { useApp, type DocId } from "@/state";
 import { DocChrome, Paper, SideRail } from "@/components/docs/DocChrome";
+import { DocHeader, Provenance } from "@/components/docs/shared";
+import { OracleGLExtract } from "@/components/docs/accounting/OracleGLExtract";
+import { TrialBalanceRecon } from "@/components/docs/accounting/TrialBalanceRecon";
+import { APAgingReport } from "@/components/docs/accounting/APAgingReport";
+import { ARAgingReport } from "@/components/docs/accounting/ARAgingReport";
 
 /**
- * Document-preview view. Day-1 placeholder — Day 2+ replaces the body
- * with per-doc hand-built React components (21 docs across 3 flows).
+ * Dispatcher — maps DocId → hand-built doc component. Docs not yet
+ * built for Day 2 (journal entries, variance memo, board report, audit
+ * trail; all 13 treasury + bp docs) fall through to a friendly stub.
  */
 export function DocView({ id }: { id: DocId }) {
+  switch (id) {
+    case "oracle-gl-extract":
+      return <OracleGLExtract />;
+    case "trial-balance-recon":
+      return <TrialBalanceRecon />;
+    case "ap-aging":
+      return <APAgingReport />;
+    case "ar-aging":
+      return <ARAgingReport />;
+    default:
+      return <ComingSoon id={id} />;
+  }
+}
+
+function ComingSoon({ id }: { id: DocId }) {
   const { back } = useApp();
+  const day = COMING_DAY[id] ?? "soon";
   return (
-    <DocChrome
-      title={`Document · ${id}`}
-      primary={{ label: "Download", onClick: () => alert("Day-2 wires up real PDF export") }}
-      secondary={{ label: "Back", onClick: back }}
-    >
+    <DocChrome title={`Document · ${id}`} secondary={{ label: "Back", onClick: back }}>
       <Paper>
-        <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute">
-          Crypton Finance · Document Preview
-        </div>
-        <h1 className="text-[40px] leading-[1.05] tracking-[-0.02em]">{id}</h1>
-        <p className="text-[15px] text-ink leading-[24px]">
-          This document is a Day-1 placeholder. The Day-2+ build replaces this body with the
-          hand-built React doc component for <code>{id}</code> (see plan §6 / §7 / §8 for the
-          21-document inventory).
+        <DocHeader
+          eyebrow="Building schedule"
+          title={prettify(id)}
+          subtitle={`This document ships on ${day}. See the project plan §6/§7/§8 for the full inventory.`}
+        />
+        <p className="text-[14px] text-mute leading-[24px] pt-4">
+          Day-1 placeholder is intentional — the workspace flow is the source of truth for sequencing.
+          Once we wire the underlying analysis (journal entries proposals, variance commentary, board
+          report assembly, audit trail, etc.) the chip lands on this URL with the real content.
         </p>
       </Paper>
       <SideRail>
-        <div className="bg-white border border-divider rounded-md p-5">
-          <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
-            Provenance
-          </div>
-          <dl className="space-y-1.5 text-[12px] leading-[18px]">
-            <Row label="Source" value="Day-1 placeholder" />
-            <Row label="Generated" value={new Date().toISOString().slice(0, 16).replace("T", " ")} />
-            <Row label="Model" value="claude-opus-4-7 (1M ctx)" />
-            <Row label="Audit trail" value="close-audit-trail" />
-          </dl>
-        </div>
+        <Provenance
+          source="Plan reference"
+          generatedAt={new Date().toISOString().slice(0, 16).replace("T", " ")}
+          auditId="—"
+          notes="Inventory tracked in docs/superpowers/specs/2026-05-27-crypton-finance.md (§6 / §7 / §8)."
+        />
       </SideRail>
     </DocChrome>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-mute">{label}</dt>
-      <dd className="text-ink font-medium text-right">{value}</dd>
-    </div>
-  );
+const COMING_DAY: Partial<Record<DocId, string>> = {
+  "journal-entry-proposal": "Day 3",
+  "variance-memo": "Day 3",
+  "board-financial-report": "Day 3",
+  "close-audit-trail": "Day 3",
+  "wallet-balance-sheet": "Day 4",
+  "bank-account-summary": "Day 4",
+  "transaction-ledger-24h": "Day 4",
+  "anomaly-brief": "Day 4",
+  "rebalancing-plan": "Day 4",
+  "daily-treasury-brief": "Day 4",
+  "business-line-pnl": "Day 5",
+  "revenue-waterfall": "Day 5",
+  "cost-breakdown": "Day 5",
+  "scenario-analysis": "Day 5",
+  "synergy-map": "Day 5",
+  "bp-strategic-memo": "Day 5",
+  "bp-board-deck": "Day 5",
+};
+
+function prettify(id: string) {
+  return id
+    .split("-")
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
 }
