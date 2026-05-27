@@ -434,5 +434,92 @@ function emit(wb, name) {
   console.log(`  Size: ${(buf.length / 1024).toFixed(1)} KB`);
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// BP packet — 4 business lines × monthly P&L × unit-economics roll
+// ─────────────────────────────────────────────────────────────────────
+
+const BP_LINES = ["Derivatives", "Spot", "Institutional", "Compliance"];
+const BP_MONTHS = ["2026-04", "2026-05", "2026-06-forecast"];
+
+function buildBusinessLines() {
+  return [
+    ["BusinessLine", "Owner", "HeadcountFY", "Q2RevenueUSD", "Q2OpExUSD", "Q2NetUSD", "MarginPct"],
+    ["Derivatives", "Sara Lim", 38, 145_312_000, 19_840_000, 125_472_000, 0.863],
+    ["Spot", "Marcus Chen", 22, 33_280_000, 6_840_000, 26_440_000, 0.794],
+    ["Institutional", "James Park", 17, 49_100_000, 6_300_000, 42_800_000, 0.871],
+    ["Compliance", "Priya Iyer", 24, 2_840_000, 9_800_000, -6_960_000, -2.45],
+  ];
+}
+
+function buildMonthlyPnL() {
+  const rows = [["BusinessLine", "Month", "AccountCode", "AccountName", "AmountUSD"]];
+  const lineAccounts = {
+    Derivatives: [
+      ["4020", "Funding rate revenue", [27_440_000, 31_142_211, 30_500_000]],
+      ["4022", "Auto-deleveraging fund contribution", [9_120_000, 11_504_780, 10_800_000]],
+      ["4030", "Principal trading PnL", [4_780_000, 4_412_330, 4_600_000]],
+      ["4040", "Market-maker rebate net", [5_220_000, 5_018_117, 5_100_000]],
+      ["5000", "Liquidation engine operational cost", [-720_000, -851_212, -800_000]],
+      ["5020", "Insurance fund top-up", [-1_200_000, -1_410_500, -1_300_000]],
+      ["5300", "People · Engineering & desk", [-3_200_000, -3_240_000, -3_280_000]],
+    ],
+    Spot: [
+      ["4010", "Trading fee revenue · maker", [3_120_000, 3_437_947, 3_500_000]],
+      ["4011", "Trading fee revenue · taker", [7_840_000, 8_217_503, 8_400_000]],
+      ["4080", "Withdrawal fee income", [240_000, 264_000, 280_000]],
+      ["5200", "Marketing & growth", [-1_240_000, -980_500, -1_100_000]],
+      ["5300", "People · BU", [-1_800_000, -1_810_000, -1_820_000]],
+    ],
+    Institutional: [
+      ["4050", "RFQ spread net", [13_770_000, 13_932_504, 14_100_000]],
+      ["4060", "Prime brokerage interest income", [2_310_000, 2_417_905, 2_450_000]],
+      ["4070", "Custodial fee income", [600_000, 612_000, 620_000]],
+      ["5300", "People · sales & ops", [-2_000_000, -2_040_000, -2_080_000]],
+    ],
+    Compliance: [
+      ["4500", "Sanction-screen pass-through fee", [240_000, 248_000, 250_000]],
+      ["5320", "People · Compliance & Legal", [-1_640_000, -1_780_300, -1_900_000]],
+      ["5410", "Legal · external counsel", [-410_000, -612_400, -650_000]],
+      ["5500", "Sanction screening per-K-tx cost", [-88_000, -102_300, -105_000]],
+      ["5400", "Licensing & regulatory fees", [-420_000, -440_000, -460_000]],
+    ],
+  };
+  for (const line of BP_LINES) {
+    for (const [code, name, monthly] of lineAccounts[line]) {
+      for (let i = 0; i < BP_MONTHS.length; i++) {
+        rows.push([line, BP_MONTHS[i], code, name, monthly[i]]);
+      }
+    }
+  }
+  return rows;
+}
+
+function buildUnitEconomics() {
+  return [
+    ["BusinessLine", "Metric", "Value", "Unit"],
+    ["Derivatives", "Funding rate days positive (Q2)", 53, "days of 63"],
+    ["Derivatives", "Avg daily liquidation revenue", 540_000, "USD"],
+    ["Derivatives", "Insurance fund coverage ratio", 1.62, "x"],
+    ["Spot", "Maker-taker fee mix", "31/69", "%"],
+    ["Spot", "Listing pipeline ROI (TTM)", 4.2, "x"],
+    ["Spot", "New token onboards Q2", 5, "tokens"],
+    ["Institutional", "RFQ avg spread", 7.2, "bps"],
+    ["Institutional", "Active Tier-1 OTC clients", 12, "count"],
+    ["Institutional", "Prime brokerage utilisation", 0.68, "ratio"],
+    ["Compliance", "License runway", 47, "months at burn"],
+    ["Compliance", "Sanction screen cost per K-tx", 0.40, "USD"],
+    ["Compliance", "KYC throughput cost per onboard", 18.40, "USD"],
+  ];
+}
+
+function makeWorkbookBP() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildBusinessLines()), "BusinessLines");
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildMonthlyPnL()), "MonthlyPnL");
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildUnitEconomics()), "UnitEconomics");
+  return wb;
+}
+
 emit(makeWorkbookGL(), "crypton-may-gl-extract.xlsx");
 emit(makeWorkbookTreasury(), "crypton-treasury-statements.xlsx");
+emit(makeWorkbookBP(), "crypton-q2-bp-packet.xlsx");

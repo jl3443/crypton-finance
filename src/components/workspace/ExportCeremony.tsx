@@ -228,6 +228,118 @@ export function ExportCeremony({
 // Treasury artifacts — emitted when the treasury flow is approved.
 // ────────────────────────────────────────────────────────────────────────
 
+// ────────────────────────────────────────────────────────────────────────
+// BP artifacts — emitted when the BP flow is approved.
+// ────────────────────────────────────────────────────────────────────────
+
+export function bpArtifacts(): Artifact[] {
+  return [
+    {
+      label: "EXCO strategic memo · PDF",
+      filename: "crypton-q2-bp-strategic-memo.html",
+      docId: "bp-strategic-memo",
+      generate: () => new Blob([buildBPMemoHTML()], { type: "text/html;charset=utf-8" }),
+    },
+    {
+      label: "Board deck · PPTX-ready HTML",
+      filename: "crypton-q2-bp-board-deck.html",
+      docId: "bp-board-deck",
+      generate: () => new Blob([buildBPDeckHTML()], { type: "text/html;charset=utf-8" }),
+    },
+    {
+      label: "Scenario analysis · JSON",
+      filename: "crypton-q3-scenarios.json",
+      docId: "scenario-analysis",
+      generate: () =>
+        new Blob(
+          [
+            JSON.stringify(
+              {
+                generatedAt: new Date().toISOString(),
+                drivers: [
+                  { name: "Perp funding mean-reversion", downside: -41_000_000, upside: 14_000_000 },
+                  { name: "+50 institutional onboards", downside: -4_000_000, upside: 18_000_000 },
+                  { name: "Spot listing pipeline", downside: -2_000_000, upside: 9_400_000 },
+                  { name: "Liquidation engine cost", downside: -3_200_000, upside: 1_100_000 },
+                  { name: "Compliance headcount", downside: -2_400_000, upside: 600_000 },
+                  { name: "FX hedge slippage", downside: -1_800_000, upside: 900_000 },
+                ],
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        ),
+    },
+    {
+      label: "EXCO routing log · JSON",
+      filename: "exco-routing-2026-05-28.json",
+      generate: () =>
+        new Blob(
+          [
+            JSON.stringify(
+              {
+                routedAt: new Date().toISOString(),
+                routedBy: "Wei Chen",
+                recipients: ["CEO", "COO", "Independent Director · A", "Independent Director · B"],
+                artifacts: ["bp-strategic-memo", "bp-board-deck", "scenario-analysis"],
+                decisionDeadline: "2026-06-12",
+                ask: "Approve $2M Q3 institutional sales budget tranche",
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        ),
+    },
+  ];
+}
+
+function buildBPMemoHTML() {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>Crypton · Q2 BP strategic memo</title>
+<style>
+body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "DM Sans", sans-serif; color: #0b0b0e; max-width: 720px; margin: 60px auto; padding: 0 24px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b6660; }
+h1 { font-size: 30px; letter-spacing: -0.5px; margin: 0 0 8px; }
+h3 { margin: 28px 0 6px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #1f1b16; }
+strong { color: #0b0b0e; }
+</style>
+</head><body>
+<div class="eyebrow">Executive Committee · Q3 ask</div>
+<h1>Q2 BP review · strategic memo</h1>
+<h3>Headline ask</h3>
+<p><strong>Increase Q3 institutional sales budget by +$2M.</strong> Expected annualised net contribution <strong>$18.4M</strong>. Single largest controllable lever available to Q3.</p>
+<h3>Rationale</h3>
+<p>Tier-1 OTC onboards drive both RFQ revenue and a +7% lift in spot taker volume. Pipeline of +50 onboards within 90 days is conservatively staffed at 17 FTE; expanding capacity unlocks the synergy.</p>
+<h3>Risks</h3>
+<p>MAS MPI timing — if approval slips to Q4, $6.5M of synergy compresses. Mitigation: tranche the $2M against MAS milestones.</p>
+<h3>Recommendation</h3>
+<p>Approve $2M tranche for Q3 institutional sales. Decision needed by <strong>June 12</strong>.</p>
+<p style="color:#6b6660; font-style:italic; margin-top:32px">Drafted by AI · reviewed by Wei Chen.</p>
+</body></html>`;
+}
+
+function buildBPDeckHTML() {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>Crypton · Q2 BP board deck</title>
+<style>
+body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "DM Sans", sans-serif; color: #0b0b0e; max-width: 820px; margin: 40px auto; padding: 0 24px; }
+.slide { border: 1px solid #ecead9; border-radius: 6px; padding: 32px; margin-bottom: 16px; min-height: 280px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #c8a24b; font-weight: bold; }
+h2 { font-size: 22px; margin: 4px 0 12px; }
+</style>
+</head><body>
+<div class="slide"><div class="eyebrow">Slide 01</div><h2>Q2 BP review</h2><p>Crypton · Confidential · Wei Chen · 2026-05-28</p></div>
+<div class="slide"><div class="eyebrow">Slide 03</div><h2>Q2 headline</h2><p>Revenue $230M · Net $187M · Net margin 81% · Pipeline +50 institutional onboards.</p></div>
+<div class="slide"><div class="eyebrow">Slide 13</div><h2>Strategic recommendation</h2><p><strong>Increase Q3 institutional sales budget by +$2M.</strong></p></div>
+<div class="slide"><div class="eyebrow">Slide 15</div><h2>The ask</h2><p>Decision by June 12 · expected annualised net $18.4M.</p></div>
+<div class="slide"><div class="eyebrow">Slide 18</div><h2>Sign-off</h2><p>CFO (BP hat): Wei Chen · 2026-05-28</p><p>EXCO chair: ___________________</p></div>
+</body></html>`;
+}
+
 export function treasuryArtifacts(): Artifact[] {
   return [
     {

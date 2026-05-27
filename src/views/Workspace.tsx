@@ -7,7 +7,8 @@ import { DropZone, type DropZoneCopy } from "@/components/upload/DropZone";
 import { rememberUpload } from "@/lib/uploadCache";
 import { MultiChartDashboard } from "@/components/dashboard/MultiChartDashboard";
 import { TreasuryDashboard } from "@/components/dashboard/TreasuryDashboard";
-import { ExportCeremony, accountingArtifacts, treasuryArtifacts, type Artifact, type CeremonyCopy } from "@/components/workspace/ExportCeremony";
+import { BPDashboard } from "@/components/dashboard/BPDashboard";
+import { ExportCeremony, accountingArtifacts, treasuryArtifacts, bpArtifacts, type Artifact, type CeremonyCopy } from "@/components/workspace/ExportCeremony";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,6 +32,13 @@ const DROPZONE_COPY: Partial<Record<FlowId, DropZoneCopy>> = {
     sheetsHint: "Expected sheets: Wallets · BankAccounts · Transactions_24h.",
     sampleFile: "/samples/crypton-treasury-statements.xlsx",
     sampleDisplayName: "crypton-treasury-statements.xlsx",
+  },
+  bp: {
+    eyebrow: "Step 1 · Ingest BP packet",
+    title: "Drop the Q2 BP packet to begin",
+    sheetsHint: "Expected sheets: BusinessLines · MonthlyPnL · UnitEconomics.",
+    sampleFile: "/samples/crypton-q2-bp-packet.xlsx",
+    sampleDisplayName: "crypton-q2-bp-packet.xlsx",
   },
 };
 
@@ -63,9 +71,11 @@ export function Workspace({ flow }: { flow: FlowId }) {
     activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
 
   // Dashboards mount alongside step content. Accounting: step 6 (Financial
-  // report assembly). Treasury: step 3 (Liquidity position).
+  // report assembly). Treasury: step 3 (Liquidity position). BP: step 3
+  // (Cross-line synergy detection).
   const showAccountingDashboard = flow === "accounting" && activeStep === 6;
   const showTreasuryDashboard = flow === "treasury" && activeStep === 3;
+  const showBPDashboard = flow === "bp" && activeStep === 3;
 
   // Export ceremony replaces the placeholder card on the final step.
   const showExport = activeStep === totalSteps - 1 && exportArtifactsFor(flow).length > 0;
@@ -161,6 +171,14 @@ export function Workspace({ flow }: { flow: FlowId }) {
                   <TreasuryDashboard />
                 </section>
               )}
+              {showBPDashboard && (
+                <section className="pt-8">
+                  <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
+                    BP dashboard · embedded in the board pack
+                  </div>
+                  <BPDashboard />
+                </section>
+              )}
             </>
           )}
         </main>
@@ -172,6 +190,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
 function exportArtifactsFor(flow: FlowId): Artifact[] {
   if (flow === "accounting") return accountingArtifacts();
   if (flow === "treasury") return treasuryArtifacts();
+  if (flow === "bp") return bpArtifacts();
   return [];
 }
 
@@ -194,6 +213,16 @@ function ceremonyCopyFor(flow: FlowId): CeremonyCopy {
       runningHeadline: "Travel-rule check · Fireblocks submission · Anchorage withdrawal…",
       doneHeadline: "Rebalancing initiated · ETA 4h · brief filed with morning ops",
       doneSubline: "Fireblocks signed instruction posted. Anchorage withdrawal cleared.",
+    };
+  }
+  if (flow === "bp") {
+    return {
+      introEyebrow: "Final step · CFO (BP hat) sign-off",
+      introBlurb:
+        "Approve the EXCO memo, board deck, and scenario pack. On approval, all three route to the EXCO inbox (CEO · COO · 2 Independent Directors) with a decision deadline of June 12 on the Q3 institutional sales budget ask.",
+      runningHeadline: "Routing artifacts to EXCO inbox…",
+      doneHeadline: "Routed to EXCO · 4 recipients · decision by June 12",
+      doneSubline: "Memo, deck, and scenario pack delivered. Audit-trail entry locked.",
     };
   }
   return {

@@ -15,6 +15,13 @@ import { TransactionLedger24h } from "@/components/docs/treasury/TransactionLedg
 import { AnomalyBrief } from "@/components/docs/treasury/AnomalyBrief";
 import { RebalancingPlan } from "@/components/docs/treasury/RebalancingPlan";
 import { DailyTreasuryBrief } from "@/components/docs/treasury/DailyTreasuryBrief";
+import { BusinessLinePnL } from "@/components/docs/bp/BusinessLinePnL";
+import { RevenueWaterfall } from "@/components/docs/bp/RevenueWaterfall";
+import { CostBreakdownByLine } from "@/components/docs/bp/CostBreakdownByLine";
+import { ScenarioAnalysisTable } from "@/components/docs/bp/ScenarioAnalysisTable";
+import { SynergyOpportunityMap } from "@/components/docs/bp/SynergyOpportunityMap";
+import { BPStrategicMemo } from "@/components/docs/bp/BPStrategicMemo";
+import { BPBoardDeck } from "@/components/docs/bp/BPBoardDeck";
 
 /**
  * Dispatcher — maps DocId → hand-built doc component. Docs not yet
@@ -51,6 +58,20 @@ export function DocView({ id }: { id: DocId }) {
       return <RebalancingPlan />;
     case "daily-treasury-brief":
       return <DailyTreasuryBrief />;
+    case "business-line-pnl":
+      return <BusinessLinePnL />;
+    case "revenue-waterfall":
+      return <RevenueWaterfall />;
+    case "cost-breakdown":
+      return <CostBreakdownByLine />;
+    case "scenario-analysis":
+      return <ScenarioAnalysisTable />;
+    case "synergy-map":
+      return <SynergyOpportunityMap />;
+    case "bp-strategic-memo":
+      return <BPStrategicMemo />;
+    case "bp-board-deck":
+      return <BPBoardDeck />;
     default:
       return <ComingSoon id={id} />;
   }
@@ -85,15 +106,7 @@ function ComingSoon({ id }: { id: DocId }) {
   );
 }
 
-const COMING_DAY: Partial<Record<DocId, string>> = {
-  "business-line-pnl": "Day 5",
-  "revenue-waterfall": "Day 5",
-  "cost-breakdown": "Day 5",
-  "scenario-analysis": "Day 5",
-  "synergy-map": "Day 5",
-  "bp-strategic-memo": "Day 5",
-  "bp-board-deck": "Day 5",
-};
+const COMING_DAY: Partial<Record<DocId, string>> = {};
 
 function prettify(id: string) {
   return id

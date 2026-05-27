@@ -285,11 +285,12 @@ export const bpFlow: FlowDef = {
         "Decomposed each line into its real unit economics. Derivatives margin compressed; Spot listing pipeline ROI 4.2x.",
       time: "Q2-W12",
       liveScripts: [
+        "Reading {filename} · {rows} rows across {sheets} sheets",
         "Derivatives: funding rate $89M + liquidation engine PnL $34M + MM net $52M",
         "Spot: maker-taker mix 31/69 · listing pipeline ROI 4.2x",
         "Institutional: RFQ spread net $41M · PB interest $7M",
       ],
-      docs: ["revenue-waterfall", "cost-breakdown"],
+      docs: ["business-line-pnl", "revenue-waterfall", "cost-breakdown"],
     },
     {
       title: "Scenario analysis",
