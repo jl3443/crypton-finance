@@ -1,4 +1,5 @@
-import { useApp, type FlowId } from "@/state";
+import { useState, useEffect } from "react";
+import { useApp, type FlowId, type DocId } from "@/state";
 import { FLOWS } from "@/data/flows";
 import { Timeline } from "@/components/workspace/Timeline";
 import { AgentLiveStrip } from "@/components/ai/AgentLiveStrip";
@@ -9,13 +10,18 @@ import { MultiChartDashboard } from "@/components/dashboard/MultiChartDashboard"
 import { TreasuryDashboard } from "@/components/dashboard/TreasuryDashboard";
 import { BPDashboard } from "@/components/dashboard/BPDashboard";
 import { ExportCeremony, accountingArtifacts, treasuryArtifacts, bpArtifacts, type Artifact, type CeremonyCopy } from "@/components/workspace/ExportCeremony";
+import { CXOSummary } from "@/components/workspace/CXOSummary";
+import { EmbeddedDocContext } from "@/components/docs/DocChrome";
+import { renderDoc } from "@/views/DocView";
 import { cn } from "@/lib/utils";
 
 /**
- * Workspace shell — [380px Timeline | flex-1 content] with a slim top
- * progress bar and AgentLiveStrip overhead. Step 0 of accounting renders
- * the DropZone for Excel ingest; other steps render per-step content
- * (Day 2 has placeholder for steps 1-7 of accounting; later days fill in).
+ * Workspace shell — [380px Timeline | flex-1 content].
+ * Step 0: DropZone.
+ * Middle steps: slim step header + inline embedded doc (no jump). If the
+ *   step has multiple docs, a chip-tab swaps the inline doc.
+ * Last step: CXOSummary (executive total report with charts + summary)
+ *   above the ExportCeremony.
  */
 
 const DROPZONE_COPY: Partial<Record<FlowId, DropZoneCopy>> = {
@@ -49,6 +55,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
   const totalSteps = f.steps.length;
   const progress = Math.min(activeStep / Math.max(totalSteps - 1, 1), 1);
   const currentStep = f.steps[activeStep];
+  const stepDocs = currentStep.docs ?? [];
 
   // Latest upload for this flow, used to interpolate {filename}/{rows}/{sheets}
   // tokens in liveScripts so the AgentLiveStrip references the real file.
@@ -62,13 +69,21 @@ export function Workspace({ flow }: { flow: FlowId }) {
       .replaceAll("{sheets}", String(latestUpload?.sheetCount ?? "—")),
   );
 
+  // Active inline doc — defaults to the first doc of the current step.
+  // Reset when step changes.
+  const [activeInlineDocId, setActiveInlineDocId] = useState<DocId | null>(
+    stepDocs[0] ?? null,
+  );
+  useEffect(() => {
+    setActiveInlineDocId(stepDocs[0] ?? null);
+  }, [activeStep, stepDocs.length, stepDocs[0]]);
+
   const goNext = () =>
     setFlowProgress(flow, { activeStep: Math.min(activeStep + 1, totalSteps - 1) });
   const goPrev = () =>
     setFlowProgress(flow, { activeStep: Math.max(activeStep - 1, 0) });
 
-  const showDropZone =
-    activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
+  const showDropZone = activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
 
   // Dashboards mount alongside step content. Accounting: step 6 (Financial
   // report assembly). Treasury: step 3 (Liquidity position). BP: step 3
@@ -77,7 +92,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
   const showTreasuryDashboard = flow === "treasury" && activeStep === 3;
   const showBPDashboard = flow === "bp" && activeStep === 3;
 
-  // Export ceremony replaces the placeholder card on the final step.
+  // Export ceremony + CXO summary on the final step.
   const showExport = activeStep === totalSteps - 1 && exportArtifactsFor(flow).length > 0;
 
   return (
@@ -140,23 +155,59 @@ export function Workspace({ flow }: { flow: FlowId }) {
               }}
             />
           ) : showExport ? (
-            <ExportCeremony
-              flow={flow}
-              artifacts={exportArtifactsFor(flow)}
-              copy={ceremonyCopyFor(flow)}
-            />
+            <div className="space-y-6">
+              <CXOSummary flow={flow} />
+              <ExportCeremony
+                flow={flow}
+                artifacts={exportArtifactsFor(flow)}
+                copy={ceremonyCopyFor(flow)}
+              />
+            </div>
           ) : (
-            <>
-              <StepPlaceholderCard
+            <div className="space-y-6">
+              <StepHeaderCard
                 step={currentStep}
                 activeStep={activeStep}
                 totalSteps={totalSteps}
                 onPrev={goPrev}
                 onNext={goNext}
-                onDocClick={(id) => go({ kind: "doc", id })}
               />
+
+              {/* Doc-tab nav if the step has more than one doc */}
+              {stepDocs.length > 1 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute pr-2">
+                    Reports for this step
+                  </span>
+                  {stepDocs.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setActiveInlineDocId(id)}
+                      className={cn(
+                        "ui-pill px-3 py-1.5 text-[11px] font-medium rounded-full border",
+                        activeInlineDocId === id
+                          ? "bg-surface-deep text-ink-inverse border-surface-deep"
+                          : "bg-white text-mute border-divider hover:text-ink",
+                      )}
+                    >
+                      {id}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Inline embedded doc */}
+              {activeInlineDocId && (
+                <EmbeddedDocContext.Provider value={true}>
+                  <article className="bg-white border border-divider rounded-md ai-spring">
+                    {renderDoc(activeInlineDocId)}
+                  </article>
+                </EmbeddedDocContext.Provider>
+              )}
+
               {showAccountingDashboard && (
-                <section className="pt-8">
+                <section className="pt-2">
                   <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
                     Close dashboard · embedded in the board pack
                   </div>
@@ -164,7 +215,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
                 </section>
               )}
               {showTreasuryDashboard && (
-                <section className="pt-8">
+                <section className="pt-2">
                   <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
                     Liquidity dashboard · live position
                   </div>
@@ -172,14 +223,14 @@ export function Workspace({ flow }: { flow: FlowId }) {
                 </section>
               )}
               {showBPDashboard && (
-                <section className="pt-8">
+                <section className="pt-2">
                   <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
                     BP dashboard · embedded in the board pack
                   </div>
                   <BPDashboard />
                 </section>
               )}
-            </>
+            </div>
           )}
         </main>
       </div>
@@ -234,63 +285,44 @@ function ceremonyCopyFor(flow: FlowId): CeremonyCopy {
   };
 }
 
-function StepPlaceholderCard({
+function StepHeaderCard({
   step,
   activeStep,
   totalSteps,
   onPrev,
   onNext,
-  onDocClick,
 }: {
   step: import("@/data/flows").FlowStep;
   activeStep: number;
   totalSteps: number;
   onPrev: () => void;
   onNext: () => void;
-  onDocClick: (id: import("@/state").DocId) => void;
 }) {
   return (
-    <article className={cn("bg-white border border-divider rounded-md p-8 ai-spring")}>
-      <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
-        Step {activeStep + 1} of {totalSteps}
+    <article className="bg-white border border-divider rounded-md p-6 ai-spring">
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute">
+          Step {activeStep + 1} of {totalSteps}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <PillButton variant="secondary" size="sm" onClick={onPrev} disabled={activeStep === 0}>
+            Back
+          </PillButton>
+          <PillButton
+            variant="primary"
+            size="sm"
+            arrow
+            onClick={onNext}
+            disabled={activeStep >= totalSteps - 1}
+          >
+            {activeStep >= totalSteps - 1 ? "End" : "Continue"}
+          </PillButton>
+        </div>
       </div>
-      <h2 className="text-[28px] font-bold text-ink leading-[32px] tracking-[-0.01em] mb-4">
+      <h2 className="text-[22px] font-bold text-ink leading-[26px] tracking-[-0.01em] mb-2">
         {step.title}
       </h2>
-      <p className="text-[15px] text-ink leading-[24px] max-w-[680px] mb-6">{step.detail}</p>
-      {step.docs && step.docs.length > 0 && (
-        <div className="mb-6">
-          <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-2">
-            Documents this step produced
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {step.docs.map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onDocClick(id)}
-                className="ui-pill inline-flex items-center gap-1.5 rounded-full bg-surface-fog text-ink hover:bg-surface-mint px-3 py-1.5 text-[12px] font-medium border border-divider"
-              >
-                {id} <span aria-hidden>↗</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="flex items-center gap-3 pt-2">
-        <PillButton variant="secondary" size="md" onClick={onPrev} disabled={activeStep === 0}>
-          Back
-        </PillButton>
-        <PillButton
-          variant="primary"
-          size="md"
-          arrow
-          onClick={onNext}
-          disabled={activeStep >= totalSteps - 1}
-        >
-          {activeStep >= totalSteps - 1 ? "End of preview" : "Continue"}
-        </PillButton>
-      </div>
+      <p className="text-[14px] text-ink leading-[22px] max-w-[760px]">{step.detail}</p>
     </article>
   );
 }

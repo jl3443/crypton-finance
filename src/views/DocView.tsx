@@ -29,6 +29,10 @@ import { BPBoardDeck } from "@/components/docs/bp/BPBoardDeck";
  * trail; all 13 treasury + bp docs) fall through to a friendly stub.
  */
 export function DocView({ id }: { id: DocId }) {
+  return renderDoc(id);
+}
+
+export function renderDoc(id: DocId) {
   switch (id) {
     case "oracle-gl-extract":
       return <OracleGLExtract />;
