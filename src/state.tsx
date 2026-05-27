@@ -106,29 +106,31 @@ const INITIAL_PROGRESS: Record<FlowId, FlowProgress> = {
 
 const SESSION_KEY = "crypton-finance-state-v1";
 
+// flowProgress is deliberately NOT persisted — every hard refresh AND
+// every "click flow card" from the hub returns the user to step 1 of
+// the flow (a fresh demo run). Only audit-trail-shaped data (approvals,
+// uploads, anomalies) survives a reload so the audit log on the hub
+// retains evidence of past actions.
 type PersistShape = Pick<
   AppState,
-  "approvals" | "uploads" | "anomalies" | "flowProgress"
+  "approvals" | "uploads" | "anomalies"
 >;
 
 function loadPersisted(): PersistShape {
   if (typeof window === "undefined") {
-    return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
+    return { approvals: [], uploads: [], anomalies: [] };
   }
   try {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (!raw) {
-      return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
-    }
+    if (!raw) return { approvals: [], uploads: [], anomalies: [] };
     const parsed = JSON.parse(raw) as Partial<PersistShape>;
     return {
       approvals: parsed.approvals ?? [],
       uploads: parsed.uploads ?? [],
       anomalies: parsed.anomalies ?? [],
-      flowProgress: parsed.flowProgress ?? INITIAL_PROGRESS,
     };
   } catch {
-    return { approvals: [], uploads: [], anomalies: [], flowProgress: INITIAL_PROGRESS };
+    return { approvals: [], uploads: [], anomalies: [] };
   }
 }
 
@@ -141,25 +143,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       view: { kind: "login" },
       history: [],
       cfo: CFO,
+      flowProgress: INITIAL_PROGRESS,
       ...persisted,
     };
   });
 
-  // Persist mutation-bearing slices to sessionStorage on every change.
+  // Persist audit-shape slices only (NOT flowProgress).
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const slice: PersistShape = {
       approvals: state.approvals,
       uploads: state.uploads,
       anomalies: state.anomalies,
-      flowProgress: state.flowProgress,
     };
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(slice));
-  }, [state.approvals, state.uploads, state.anomalies, state.flowProgress]);
+  }, [state.approvals, state.uploads, state.anomalies]);
 
+  // Entering a workspace from the hub ALWAYS resets that flow to step 0
+  // for a fresh demo run. (Doc/export view-kind transitions don't reset.)
   const go = React.useCallback(
     (view: View) =>
-      setState((s) => ({ ...s, view, history: [...s.history, s.view] })),
+      setState((s) => {
+        const flowProgress =
+          view.kind === "workspace"
+            ? { ...s.flowProgress, [view.flow]: { activeStep: 0, approved: false } }
+            : s.flowProgress;
+        return { ...s, view, history: [...s.history, s.view], flowProgress };
+      }),
     [],
   );
 
