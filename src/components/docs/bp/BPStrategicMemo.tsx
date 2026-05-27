@@ -91,7 +91,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <h3 className="text-[11px] tracking-[0.18em] uppercase font-bold text-surface-deep mb-1.5">{title}</h3>
-      <p className="text-[14px] text-ink leading-[24px]">{children}</p>
+      <div className="text-[14px] text-ink leading-[24px] space-y-2">{children}</div>
     </div>
   );
 }

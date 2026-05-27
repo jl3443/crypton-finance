@@ -1,121 +1,172 @@
-# HR Concierge — demo
+# Crypton Finance — CFO workspace demo
 
-Agentic-AI HR demo for a global multinational. CXO audience. Built on the
-DSM-Firmenich design system (mint #C3E6E1, DM Sans, pill CTAs, sentence case)
-with an extended set of AI-motion primitives.
+Enterprise AI demo for the **Crypton CFO org**: three flows on one
+single-CFO workspace, with real Excel ingest, hand-built executive
+documents, multi-chart dashboards, and audited export ceremonies.
+
+- **Persona** · Wei Chen, Group CFO, Crypton
+- **Voice** · Real Crypton unit economics (funding-rate revenue,
+  auto-deleveraging fund contribution, liquidation engine cost, insurance
+  fund, RFQ spread net, etc.) in neutral industry wording — no
+  trader-floor jargon on surface copy.
+- **Audience** · CFO + Audit Committee · Board · EXCO
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev
+npm run dev            # dev server on :5173
+# or
+npm run build && npm run preview   # production preview on :4173
 ```
 
-Open <http://localhost:5173>. The demo starts on the HR Dashboard.
+Open the URL printed by Vite. Demo starts at the login screen — the
+email auto-types in ~1.5s, then the Continue pill activates. One click
+into the CFO Hub.
 
-## Stack
+To regenerate sample XLSX fixtures used by the "Try sample" pill:
 
-- Vite 8 + React 19 + TypeScript
-- Tailwind v4 with the DSM-F token foundation (`src/index.css`)
-- `lucide-react` icons, `clsx` + `tailwind-merge` for class composition
-- No backend, no router — view state is a discriminated union in
-  `src/state.tsx` (same pattern as the Predictive-Risk-Agent2 reference)
+```bash
+node scripts/seed-samples.mjs
+```
+
+This emits three workbooks into `public/samples/`:
+
+| File | Sheets | Use |
+| --- | --- | --- |
+| `crypton-may-gl-extract.xlsx` | GL_Detail · TB_May · AP_Aging · AR_Aging | Accounting flow |
+| `crypton-treasury-statements.xlsx` | Wallets · BankAccounts · Transactions_24h | Treasury flow |
+| `crypton-q2-bp-packet.xlsx` | BusinessLines · MonthlyPnL · UnitEconomics | BP flow |
 
 ## Demo script
 
-The demo follows four flows the client lock-in'd on. Each flow is reachable
-from the HR Dashboard. Persona switching uses a logout-and-back-in ceremony
-on purpose so the chrome reset has narrative weight.
+### Arc 1 · Accounting — Oracle close cycle (8 steps)
 
-### Flow 1 — UC2 Compliance Radar ★ (the hero)
+1. Hub → **"Close Q2 books · Oracle GL"** card.
+2. Step 1 DropZone — click **"Try sample"** (loads `crypton-may-gl-extract.xlsx`
+   via SheetJS) or drop a real XLSX. Preview modal shows sheets + first
+   50 rows + parse time.
+3. Click **"Continue with AI"** → step 2 begins; AgentLiveStrip narrates
+   with the real filename / row count.
+4. Continue through steps 3–7. Step 7 (Financial report assembly) mounts
+   the 6-panel close dashboard (variance heat · AP/AR aging stacks ·
+   GL completeness donut · YoY revenue trend · period-over-period
+   waterfall).
+5. Click any doc chip on each step — Oracle GL extract / TB recon / AP /
+   AR aging / Journal entry proposals (JE-0429 to JE-0432) / Variance
+   memo / 14-page board financial report / Close audit trail.
+6. Step 8 → **"Approve & export"** → 4-row drafting animation → 4
+   downloadable artifacts (memo HTML · board report HTML · audit trail
+   JSON · Oracle journal XML).
 
-1. Dashboard → click **"German workweek update"** (top case row, or the
-   **"Open workspace"** CTA on the first pending decision).
-2. Workspace auto-advances through 4 agent steps (detect law change →
-   compute impact → draft documents → human review).
-3. Pause at step 4: decision card spring-in with 4 metrics, 90-day rollout,
-   and 4 document chips (Source law / Handbook redline / Employee
-   announcement DE+EN / Works council notice).
-4. Click any document chip to preview the artifact, then back.
-5. Click **"Approve and execute"**: auto-actions tick through one-by-one,
-   activity log streams, decision card becomes "Roll-out under way".
+### Arc 2 · Treasury — daily brief (7 steps)
 
-### Flow 2 — UC1 Offboarding
+1. Hub → **"Treasury daily brief"** card.
+2. Try sample loads the 1,247-transaction overnight cycle.
+3. Step 4 (Liquidity position) mounts the 6-panel treasury dashboard
+   (cash by jurisdiction · wallets by chain · 30-day net flow · anomaly
+   scatter · runway gauge · Anchorage utilisation).
+4. Doc chips reach Wallet balance sheet ($6.35B) · Bank account summary
+   ($210M across 7 jurisdictions) · Transaction ledger 24h with category
+   filters · 2-event Anomaly brief with per-event ack · $80M USDT
+   Rebalancing plan (Anchorage → Fireblocks) · 1-page Daily brief.
+5. Step 7 ceremony: **"Travel-rule check · Fireblocks submission ·
+   Anchorage withdrawal…"** → done state files the brief and posts the
+   signed Fireblocks instruction.
 
-1. Dashboard → click **"Senior R&D · Heidelberg offboarding"**.
-2. Same workspace shell. Decision card has three sub-blocks: knowledge
-   transfer plan, 23 system accesses (a grid that staggers in), exit
-   package with prorated Christmas bonus.
-3. Termination letter PDF available from the "Letter" field.
+### Arc 3 · Business Partner — Q2 4-line review (7 steps)
 
-### Flow 3 — UC3 Compensation
+1. Hub → **"Q2 business-line review"** card.
+2. Try sample loads BusinessLines / MonthlyPnL / UnitEconomics packet.
+3. Step 4 (Cross-line synergy detection) mounts the 6-panel BP dashboard
+   (revenue waterfall · margin radar · sensitivity tornado · synergy
+   quadrant · quarterly trend · headcount mix).
+4. Doc chips reach Business line P&L (Derivatives / Spot / Institutional
+   / Compliance tabs with real unit economics) · Revenue waterfall ·
+   Cost breakdown · 6-driver Scenario tornado · 5-candidate Synergy map ·
+   720-word EXCO memo with single ask **"Increase Q3 institutional
+   sales budget by +$2M"** · 18-slide Board deck.
+5. Step 7 ceremony: **"Routed to EXCO · 4 recipients · decision by
+   June 12"** → 4 artifacts (strategic memo · board deck · scenarios
+   JSON · EXCO routing log).
 
-1. Dashboard → click **"Senior Engineer retention case"**.
-2. Decision card shows three scenarios (Conservative · Mid · Retention).
-3. **Click any scenario** — the internal-equity bar chart below updates:
-   Marcus's bar morphs to the new salary, affected peers turn rose when
-   the Retention option flags them.
-4. Confirm → Comp deliverables (3-up: salary update form / manager talking
-   points / Finance rationale).
-
-### Flow 4 — UC4 Employee self-service
-
-1. From Dashboard → bottom of sidebar → **"Switch role · Sign out"**.
-2. Ceremony: black fade → login form auto-types `employee@company.com` →
-   button "presses itself" → Employee Landing.
-3. The Ultimatix-style tile grid has an active **"Open chat →"** mint
-   banner up top (the proactive AI nudge).
-4. Click into the chat. The scripted conversation runs through letter
-   request → field confirmation → PDF preview → proactive wellness nudge →
-   coverage-plan PDF.
-
-## Files
+## Architecture
 
 ```
 src/
-  state.tsx                  view-state machine + context
-  index.css                  DSM-F tokens + AI motion contracts
-  data/                      cases, scenarios, UC3 peers, etc.
+  state.tsx                       View-state machine + Context
+                                  ({ kind: login | hub | workspace | doc | export })
+  index.css                       Warm-gold Bloomberg tokens + 4 AI motion keyframes
+  data/flows.ts                   3 FlowDefs · steps · liveScripts · doc chips
+  lib/parseExcel.ts               Lazy-import SheetJS reader (xlsx)
+  lib/uploadCache.ts              Module-level Map<FlowId, ParsedFile>
   components/
-    ds/                      DSM-Firmenich design-system components (copied
-                             from /design-system, "use client" stripped)
-    ai/                      AI-motion primitives:
-                               AIDot · StreamingText · SpringIn
-                               CountUp · StaggerList
-    blocks/                  dashboard building blocks
-    workspace/               timeline · alert · decision cards (UC1/2/3) ·
-                             auto-actions · activity log
-    docs/                    8 document preview pages + DocChrome shell
-    layout/Sidebar.tsx       grouped HRBP sidebar with agents card + footer
-  views/
-    Dashboard.tsx
-    ComplianceRadar.tsx
-    WorkspaceUC1.tsx · WorkspaceUC2.tsx · WorkspaceUC3.tsx
-    DocPreview.tsx           routes by DocId
-    Logout.tsx · EmployeeLanding.tsx · EmployeeChat.tsx
+    ai/                           AIDot · AgentLiveStrip · StreamingText ·
+                                  CountUp · Sparkline · SpringIn · Spinner
+    blocks/                       KPIStrip · PillButton · SectionEyebrow
+    docs/                         DocChrome (1100px paper + 320px side rail) ·
+                                  shared.tsx (DocHeader · Provenance · CrossLinks)
+    docs/accounting/              8 hand-built docs
+    docs/treasury/                6 hand-built docs + shared data.ts
+    docs/bp/                      7 hand-built docs + shared data.ts
+    dashboard/                    MultiChartDashboard (accounting) ·
+                                  TreasuryDashboard · BPDashboard (6 panels each)
+    upload/                       DropZone · UploadPreviewModal (frozen-header preview)
+    workspace/                    Timeline · ActivityLog · ExportCeremony
+  views/                          Login · Hub · Workspace · DocView · ExportView
 ```
 
-## Design system
+## Tech stack
 
-All DSM-F UI components were copied verbatim from
-`/Users/kyle/Desktop/dsm-firmenich/design-system/src/components/`
-(only 3 `"use client"` directives removed for Vite). Tokens come from the
-DS's `globals.css` and live in `src/index.css` with three extra AI-motion
-contracts on top:
+- **Vite 8** + **React 19** + **TypeScript 6** — discriminated-union view
+  state, no router.
+- **Tailwind v4** via `@tailwindcss/vite`; tokens in `src/index.css` with
+  `@theme inline`.
+- **Recharts 2** for embedded charts; **xlsx (SheetJS)** for Excel parse
+  (lazy-imported behind the DropZone).
+- `lucide-react` icons, `clsx` + `tailwind-merge` for class composition.
+- All AI motion via 4 CSS keyframes (`cx-pulse` · `cx-stream-in` ·
+  `cx-spring-in` · `cx-caret`) — `motion` is installed but unused; the
+  cost stays at-rest.
 
-- `--motion-duration-stream: 80ms` — per-row stagger on activity logs
-- `--motion-duration-spring: 420ms` — decision-card scale-in
-- `--motion-duration-pulse: 1800ms` — agent "thinking" dot
+## Visual system
 
-`tailwind-merge` + `cn()` follow the same composition pattern the DS uses.
+Warm-gold Bloomberg-Terminal-meets-Linear light mode.
+
+```
+--ink             #0b0b0e   near-black ink
+--surface-deep    #1f1b16   espresso "AI agreed" emphasis
+--accent-green    #c8a24b   warm gold (renamed in CSS for back-compat)
+--surface-mint    #f5edda   warm-gold soft (renamed)
+--mark-red        #a6192e   down / flagged
+--surface-fog     #faf9f5   warm off-white page bg
+```
+
+`.ui-pill` carries the same hover language across every CTA — 180ms
+`translateY(-1px)` on hover, `scale(0.96)` on active.
+
+## Out of scope (deliberate)
+
+- **No real backend.** All numbers are seeded; AI commentary is
+  hand-written. The agent panel narrates what an AI *would* be doing.
+- **No real Oracle / Fireblocks / Anchorage connectors.** "Routed to
+  Oracle nightly" is theatrical.
+- **No real auth.** Login is a ceremony.
+- **Dark mode** is not supported — calm finance-ops light surface only.
+- **Mobile** is not supported — desktop-first design (1440×900 is the
+  target rendering size).
+- **Expense reimbursement** and the **helpdesk-with-KG** flow are
+  separate demos, not in this 3-flow demo.
 
 ## Standing rules
 
-1. **No HR or ops jargon** in user-visible copy. Use plain professional
-   words: "HR record", not "HRIS"; "market range", not "salary band";
-   "remove access", not "revoke".
-2. **No big-then-small text stacks.** One eyebrow per card max. Body
-   text ≥ 14 px. Avoid stacking a 36 px metric on top of a 12 px tertiary
-   sub-caption.
-3. **CXO audience.** Editorial whitespace, story-first, no system-trace
-   detail surfaced by default.
+1. **Real Crypton unit economics, neutral wording.** Funding rate
+   revenue / Auto-deleveraging fund contribution / Principal trading
+   PnL / Liquidation engine cost / Insurance fund — yes. "对手盘" /
+   "爆仓收入" — no.
+2. **One eyebrow per card.** Sentence case in body, ALL-CAPS-TRACKED
+   only for the 11px eyebrows.
+3. **Restraint over neon.** No gradients, no crypto-bro tropes; a
+   Bloomberg-terminal user should respect this.
+4. **CXO audience.** Editorial whitespace, story-first, every doc has
+   provenance + cross-links + a real downloadable artifact.
