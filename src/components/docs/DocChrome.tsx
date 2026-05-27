@@ -1,11 +1,13 @@
 import * as React from "react";
+import { useState } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { useApp } from "@/state";
 import { PillButton } from "@/components/blocks/PillButton";
+import { cn } from "@/lib/utils";
 
 /**
  * When set, DocChrome renders its body without the outer fog background and
- * top header. Used by the employee split-screen where the surrounding panel
- * already owns the back / breadcrumb chrome.
+ * top header. Embedded mode is used inside workspace step content.
  */
 export const EmbeddedDocContext = React.createContext(false);
 
@@ -22,8 +24,7 @@ export function DocChrome({
 }) {
   const embedded = React.useContext(EmbeddedDocContext);
   const { back, history } = useApp();
-  // Label the back button based on the previous view, so the chrome reads
-  // truthfully whether you came from a workspace, the dashboard, or the chat.
+  const [fullscreen, setFullscreen] = useState(false);
   const prev = history[history.length - 1];
   const backLabel =
     prev?.kind === "workspace"
@@ -33,11 +34,15 @@ export function DocChrome({
         : "Back to hub";
 
   if (embedded) {
-    // Strip the redundant "Document · " preamble so the inline title reads
-    // cleanly inside the split-screen pane.
     const cleanTitle = title.replace(/^Document\s·\s/i, "");
     return (
-      <div className="px-6 pt-5 pb-10">
+      <div
+        className={cn(
+          fullscreen
+            ? "fixed inset-0 z-50 bg-surface-fog overflow-auto px-10 pt-6 pb-12"
+            : "px-6 pt-5 pb-10",
+        )}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="text-[14px] font-bold text-ink min-w-0 truncate max-w-full">
             {cleanTitle}
@@ -53,12 +58,18 @@ export function DocChrome({
                 {primary.label}
               </PillButton>
             )}
+            <button
+              type="button"
+              onClick={() => setFullscreen((v) => !v)}
+              title={fullscreen ? "Exit fullscreen" : "Maximize"}
+              className="ui-pill grid w-8 h-8 place-items-center rounded-md border border-divider hover:bg-surface-mint hover:border-surface-deep transition-colors"
+            >
+              {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
           </div>
         </div>
-        {/* In the split-screen we have ~2/3 of the viewport — wide enough
-            to keep the doc body + side rail side-by-side, but with a
-            slimmer rail than the full-page chrome. */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-5">{children}</div>
+        {/* Paper full width on top, SideRail's children flow into a 2-col grid below */}
+        <div className="space-y-5">{children}</div>
       </div>
     );
   }
@@ -92,13 +103,15 @@ export function DocChrome({
         </div>
       </header>
       <div className="flex justify-center px-10 py-10">
-        <div className="w-full max-w-[1100px] grid grid-cols-[1fr_320px] gap-6">{children}</div>
+        {/* Full-width stacked layout: Paper full width, SideRail children flow into a 2-col grid below. */}
+        <div className="w-full max-w-[1280px] space-y-6">{children}</div>
       </div>
     </div>
   );
 }
 
-/** Paper container — white card with comfortable padding. */
+/** Paper container — white card with comfortable padding. Always full width
+ *  of the surrounding stack so tables/charts get the room they need. */
 export function Paper({ children }: { children: React.ReactNode }) {
   const embedded = React.useContext(EmbeddedDocContext);
   return (
@@ -114,7 +127,10 @@ export function Paper({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Right rail under the paper — for AI summary / metadata cards. */
+/** SideRail — its children (Provenance / CrossLinks / etc.) flow into a
+ *  2-column grid below the Paper. On narrow viewports they stack 1-column. */
 export function SideRail({ children }: { children: React.ReactNode }) {
-  return <aside className="space-y-4">{children}</aside>;
+  return (
+    <aside className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</aside>
+  );
 }

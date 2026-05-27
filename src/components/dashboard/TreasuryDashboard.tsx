@@ -189,17 +189,21 @@ function RunwayGauge() {
   const months = 47;
   const target = 60;
   const ratio = Math.min(1, months / target);
-  // Half-circle gauge (180° → 360° clockwise)
+  // Half-circle gauge — TOP half, left → right via top, drawn clockwise.
+  // Both arcs are always ≤ 180°, so largeArc must be 0 (never 1, otherwise
+  // the arc goes the long way around through the bottom and gets clipped
+  // by the viewBox).
   const cx = 100;
   const cy = 100;
   const r = 70;
-  // unused: const startAngle = Math.PI; // left
+  // Start at left (180°), sweep clockwise toward right (360°/0°).
+  // endAngle = π → 2π as ratio goes 0 → 1. sin is negative in this range
+  // (the top half in SVG y-down coords), so y < cy.
   const endAngle = Math.PI + Math.PI * ratio;
   const x = cx + r * Math.cos(endAngle);
   const y = cy + r * Math.sin(endAngle);
-  const largeArc = ratio > 0.5 ? 1 : 0;
-  const path = `M ${cx - r} ${cy} A ${r} ${r} 0 ${largeArc} 1 ${x} ${y}`;
-  const fullPath = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy}`;
+  const path = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${x} ${y}`;
+  const fullPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   return (
     <div className="w-full h-full flex items-center justify-center">
       <svg viewBox="0 0 200 130" className="w-full h-full">
