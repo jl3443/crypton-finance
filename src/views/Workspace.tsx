@@ -5,6 +5,8 @@ import { AgentLiveStrip } from "@/components/ai/AgentLiveStrip";
 import { PillButton } from "@/components/blocks/PillButton";
 import { DropZone, type DropZoneCopy } from "@/components/upload/DropZone";
 import { rememberUpload } from "@/lib/uploadCache";
+import { MultiChartDashboard } from "@/components/dashboard/MultiChartDashboard";
+import { ExportCeremony, accountingArtifacts, type Artifact } from "@/components/workspace/ExportCeremony";
 import { cn } from "@/lib/utils";
 
 /**
@@ -51,6 +53,13 @@ export function Workspace({ flow }: { flow: FlowId }) {
 
   const showDropZone =
     activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
+
+  // Multi-chart dashboard mounts alongside the step content on the
+  // "Financial report assembly" step of the accounting flow (index 6).
+  const showDashboard = flow === "accounting" && activeStep === 6;
+
+  // Export ceremony replaces the placeholder card on the final step.
+  const showExport = activeStep === totalSteps - 1 && exportArtifactsFor(flow).length > 0;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -111,20 +120,48 @@ export function Workspace({ flow }: { flow: FlowId }) {
                 setFlowProgress(flow, { activeStep: 1 });
               }}
             />
-          ) : (
-            <StepPlaceholderCard
-              step={currentStep}
-              activeStep={activeStep}
-              totalSteps={totalSteps}
-              onPrev={goPrev}
-              onNext={goNext}
-              onDocClick={(id) => go({ kind: "doc", id })}
+          ) : showExport ? (
+            <ExportCeremony
+              flow={flow}
+              artifacts={exportArtifactsFor(flow)}
+              introBlurb={exportBlurbFor(flow)}
             />
+          ) : (
+            <>
+              <StepPlaceholderCard
+                step={currentStep}
+                activeStep={activeStep}
+                totalSteps={totalSteps}
+                onPrev={goPrev}
+                onNext={goNext}
+                onDocClick={(id) => go({ kind: "doc", id })}
+              />
+              {showDashboard && (
+                <section className="pt-8">
+                  <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
+                    Close dashboard · embedded in the board pack
+                  </div>
+                  <MultiChartDashboard />
+                </section>
+              )}
+            </>
           )}
         </main>
       </div>
     </div>
   );
+}
+
+function exportArtifactsFor(flow: FlowId): Artifact[] {
+  if (flow === "accounting") return accountingArtifacts();
+  return [];
+}
+
+function exportBlurbFor(flow: FlowId): string {
+  if (flow === "accounting") {
+    return "Sign off the four adjusting entries (JE-0429 to 0432), the variance memo, the board financial report, and the close audit trail. On approval, AI routes entries to Oracle's nightly batch, files the memo + report to Sharepoint, and locks the audit trail.";
+  }
+  return "Approve to route the artifacts and lock the audit trail.";
 }
 
 function StepPlaceholderCard({

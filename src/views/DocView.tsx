@@ -5,6 +5,10 @@ import { OracleGLExtract } from "@/components/docs/accounting/OracleGLExtract";
 import { TrialBalanceRecon } from "@/components/docs/accounting/TrialBalanceRecon";
 import { APAgingReport } from "@/components/docs/accounting/APAgingReport";
 import { ARAgingReport } from "@/components/docs/accounting/ARAgingReport";
+import { JournalEntryProposal } from "@/components/docs/accounting/JournalEntryProposal";
+import { VarianceCommentaryMemo } from "@/components/docs/accounting/VarianceCommentaryMemo";
+import { BoardFinancialReport } from "@/components/docs/accounting/BoardFinancialReport";
+import { CloseAuditTrail } from "@/components/docs/accounting/CloseAuditTrail";
 
 /**
  * Dispatcher — maps DocId → hand-built doc component. Docs not yet
@@ -21,6 +25,14 @@ export function DocView({ id }: { id: DocId }) {
       return <APAgingReport />;
     case "ar-aging":
       return <ARAgingReport />;
+    case "journal-entry-proposal":
+      return <JournalEntryProposal />;
+    case "variance-memo":
+      return <VarianceCommentaryMemo />;
+    case "board-financial-report":
+      return <BoardFinancialReport />;
+    case "close-audit-trail":
+      return <CloseAuditTrail />;
     default:
       return <ComingSoon id={id} />;
   }
@@ -56,10 +68,6 @@ function ComingSoon({ id }: { id: DocId }) {
 }
 
 const COMING_DAY: Partial<Record<DocId, string>> = {
-  "journal-entry-proposal": "Day 3",
-  "variance-memo": "Day 3",
-  "board-financial-report": "Day 3",
-  "close-audit-trail": "Day 3",
   "wallet-balance-sheet": "Day 4",
   "bank-account-summary": "Day 4",
   "transaction-ledger-24h": "Day 4",
