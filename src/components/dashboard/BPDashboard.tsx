@@ -87,11 +87,19 @@ function WaterfallChart() {
       <BarChart data={bars} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
         <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
         <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="var(--mute)" />
-        <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+        <YAxis
+          tick={{ fontSize: 11 }}
+          stroke="var(--mute)"
+          tickFormatter={(v) => `$${v}M`}
+          domain={[60, 90]}
+          allowDataOverflow
+        />
         <Tooltip
           contentStyle={{ fontSize: 12 }}
           formatter={(_v, _n, p) => {
-            const v = (p as { payload?: { value?: number } } | undefined)?.payload?.value ?? 0;
+            const pl = (p as { payload?: { value?: number; kind?: string } } | undefined)?.payload;
+            const v = pl?.value ?? 0;
+            if (pl?.kind === "anchor") return [`$${(v / 1_000_000).toFixed(2)}M`, "Total"];
             return [`${v >= 0 ? "+" : "−"}$${Math.abs(v / 1_000_000).toFixed(2)}M`, "Δ"];
           }}
         />

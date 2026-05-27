@@ -615,19 +615,38 @@ function BPBody() {
         }
         chart={
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={waterfall} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <BarChart data={waterfall} margin={{ top: 20, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="var(--mute)" />
-              <YAxis tick={{ fontSize: 10 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+              <YAxis
+                tick={{ fontSize: 10 }}
+                stroke="var(--mute)"
+                tickFormatter={(v) => `$${v}M`}
+                domain={[60, 90]}
+                allowDataOverflow
+              />
               <Tooltip
                 contentStyle={{ fontSize: 11 }}
                 formatter={(_v, _n, p) => {
-                  const v = (p as { payload?: { value?: number } } | undefined)?.payload?.value ?? 0;
+                  const pl = (p as { payload?: { value?: number; kind?: string } } | undefined)?.payload;
+                  const v = pl?.value ?? 0;
+                  if (pl?.kind === "anchor") return [`$${v.toFixed(2)}M`, "Total"];
                   return [`${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(2)}M`, "Δ"];
                 }}
               />
               <Bar dataKey="start" stackId="w" fill="transparent" />
-              <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]}>
+              <Bar
+                dataKey="height"
+                stackId="w"
+                radius={[2, 2, 0, 0]}
+                label={{
+                  position: "top",
+                  fontSize: 10,
+                  fill: "var(--ink)",
+                  formatter: (v: number) =>
+                    Math.abs(v) >= 0.4 ? `${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(1)}M` : "",
+                }}
+              >
                 {waterfall.map((b, i) => (
                   <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green)" : "var(--mark-red)"} />
                 ))}

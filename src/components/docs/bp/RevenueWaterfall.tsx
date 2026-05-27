@@ -61,19 +61,40 @@ export function RevenueWaterfall() {
           <Eyebrow>Movement</Eyebrow>
           <div className="h-[320px] mt-2 bg-white border border-divider rounded-md p-3">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bars} margin={{ top: 16, right: 16, bottom: 40, left: 8 }}>
+              <BarChart data={bars} margin={{ top: 24, right: 16, bottom: 40, left: 8 }}>
                 <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" stroke="var(--mute)" interval={0} />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${(v / 1_000_000).toFixed(0)}M`} />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  stroke="var(--mute)"
+                  tickFormatter={(v) => `$${(v / 1_000_000).toFixed(0)}M`}
+                  domain={[60_000_000, 90_000_000]}
+                  allowDataOverflow
+                />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
                   formatter={(_v, _n, p) => {
-                    const v = (p as { payload?: { value?: number } } | undefined)?.payload?.value ?? 0;
+                    const pl = (p as { payload?: { value?: number; kind?: string } } | undefined)?.payload;
+                    const v = pl?.value ?? 0;
+                    if (pl?.kind === "anchor") return [`$${(v / 1_000_000).toFixed(2)}M`, "Total"];
                     return [`${v >= 0 ? "+" : "−"}$${Math.abs(v / 1_000_000).toFixed(2)}M`, "Δ"];
                   }}
                 />
                 <Bar dataKey="start" stackId="w" fill="transparent" />
-                <Bar dataKey="height" stackId="w" radius={[3, 3, 0, 0]}>
+                <Bar
+                  dataKey="height"
+                  stackId="w"
+                  radius={[3, 3, 0, 0]}
+                  label={{
+                    position: "top",
+                    fontSize: 11,
+                    fill: "var(--ink)",
+                    formatter: (v: number) => {
+                      const n = v / 1_000_000;
+                      return Math.abs(n) >= 0.4 ? `${n >= 0 ? "+" : "−"}$${Math.abs(n).toFixed(1)}M` : "";
+                    },
+                  }}
+                >
                   {bars.map((b, i) => (
                     <Cell
                       key={i}
