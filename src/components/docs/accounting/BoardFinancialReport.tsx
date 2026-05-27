@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { DocChrome, Paper, SideRail } from "@/components/docs/DocChrome";
 import { Provenance, CrossLinks, StatRow, Eyebrow, fmtUSD, fmtPct } from "@/components/docs/shared";
+import { WithDateRange, MONTH_PRESETS } from "@/components/dashboard/TimeRangeFilter";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,18 +26,18 @@ import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------- data
 const REVENUE_MONTHLY = [
-  { m: "Jun-25", actual: 58_400, budget: 58_000 },
-  { m: "Jul-25", actual: 61_200, budget: 60_500 },
-  { m: "Aug-25", actual: 63_100, budget: 62_000 },
-  { m: "Sep-25", actual: 64_500, budget: 64_000 },
-  { m: "Oct-25", actual: 68_200, budget: 66_500 },
-  { m: "Nov-25", actual: 70_100, budget: 68_500 },
-  { m: "Dec-25", actual: 73_300, budget: 71_000 },
-  { m: "Jan-26", actual: 70_900, budget: 72_000 },
-  { m: "Feb-26", actual: 72_500, budget: 73_500 },
-  { m: "Mar-26", actual: 75_600, budget: 75_000 },
-  { m: "Apr-26", actual: 74_560, budget: 76_000 },
-  { m: "May-26", actual: 80_080, budget: 77_500 },
+  { date: "2025-06-01", m: "Jun-25", actual: 58_400, budget: 58_000 },
+  { date: "2025-07-01", m: "Jul-25", actual: 61_200, budget: 60_500 },
+  { date: "2025-08-01", m: "Aug-25", actual: 63_100, budget: 62_000 },
+  { date: "2025-09-01", m: "Sep-25", actual: 64_500, budget: 64_000 },
+  { date: "2025-10-01", m: "Oct-25", actual: 68_200, budget: 66_500 },
+  { date: "2025-11-01", m: "Nov-25", actual: 70_100, budget: 68_500 },
+  { date: "2025-12-01", m: "Dec-25", actual: 73_300, budget: 71_000 },
+  { date: "2026-01-01", m: "Jan-26", actual: 70_900, budget: 72_000 },
+  { date: "2026-02-01", m: "Feb-26", actual: 72_500, budget: 73_500 },
+  { date: "2026-03-01", m: "Mar-26", actual: 75_600, budget: 75_000 },
+  { date: "2026-04-01", m: "Apr-26", actual: 74_560, budget: 76_000 },
+  { date: "2026-05-01", m: "May-26", actual: 80_080, budget: 77_500 },
 ];
 
 const COSTS_BY_BUCKET = [
@@ -162,21 +163,25 @@ export function BoardFinancialReport() {
             Monthly revenue actual vs budget, last 12 months. May exceeded budget by $2.58M on
             funding-rate strength.
           </p>
-          <div className="h-[260px] bg-white border border-divider rounded-md p-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={REVENUE_MONTHLY} margin={{ top: 16, right: 16, bottom: 16, left: 8 }}>
-                <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-                <XAxis dataKey="m" tick={{ fontSize: 11 }} stroke="var(--mute)" />
-                <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v / 1000}k`} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12 }}
-                  formatter={(v) => [`$${Number(v ?? 0).toLocaleString()}k`, ""]}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={{ r: 2 }} />
-                <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-[300px] bg-surface-mint/60 border border-divider rounded-md p-3">
+            <WithDateRange data={REVENUE_MONTHLY} presets={MONTH_PRESETS}>
+              {(filtered) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={filtered} margin={{ top: 12, right: 16, bottom: 16, left: 8 }}>
+                    <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+                    <XAxis dataKey="m" tick={{ fontSize: 11 }} stroke="var(--mute)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v / 1000}k`} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12 }}
+                      formatter={(v) => [`$${Number(v ?? 0).toLocaleString()}k`, ""]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </WithDateRange>
           </div>
         </Section>
 

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { Eyebrow } from "@/components/docs/shared";
+import { WithDateRange, MONTH_PRESETS } from "@/components/dashboard/TimeRangeFilter";
 
 /**
  * MultiChartDashboard — 6-panel grid mounted alongside step 7
@@ -236,33 +237,37 @@ function GLCompletenessDonut() {
 // 5 · Revenue trend line · actual vs budget (12 months)
 // ──────────────────────────────────────────────────────────────────────
 const TREND = [
-  { m: "Jun-25", actual: 58_400, budget: 58_000 },
-  { m: "Jul-25", actual: 61_200, budget: 60_500 },
-  { m: "Aug-25", actual: 63_100, budget: 62_000 },
-  { m: "Sep-25", actual: 64_500, budget: 64_000 },
-  { m: "Oct-25", actual: 68_200, budget: 66_500 },
-  { m: "Nov-25", actual: 70_100, budget: 68_500 },
-  { m: "Dec-25", actual: 73_300, budget: 71_000 },
-  { m: "Jan-26", actual: 70_900, budget: 72_000 },
-  { m: "Feb-26", actual: 72_500, budget: 73_500 },
-  { m: "Mar-26", actual: 75_600, budget: 75_000 },
-  { m: "Apr-26", actual: 74_560, budget: 76_000 },
-  { m: "May-26", actual: 80_080, budget: 77_500 },
+  { date: "2025-06-01", m: "Jun-25", actual: 58_400, budget: 58_000 },
+  { date: "2025-07-01", m: "Jul-25", actual: 61_200, budget: 60_500 },
+  { date: "2025-08-01", m: "Aug-25", actual: 63_100, budget: 62_000 },
+  { date: "2025-09-01", m: "Sep-25", actual: 64_500, budget: 64_000 },
+  { date: "2025-10-01", m: "Oct-25", actual: 68_200, budget: 66_500 },
+  { date: "2025-11-01", m: "Nov-25", actual: 70_100, budget: 68_500 },
+  { date: "2025-12-01", m: "Dec-25", actual: 73_300, budget: 71_000 },
+  { date: "2026-01-01", m: "Jan-26", actual: 70_900, budget: 72_000 },
+  { date: "2026-02-01", m: "Feb-26", actual: 72_500, budget: 73_500 },
+  { date: "2026-03-01", m: "Mar-26", actual: 75_600, budget: 75_000 },
+  { date: "2026-04-01", m: "Apr-26", actual: 74_560, budget: 76_000 },
+  { date: "2026-05-01", m: "May-26", actual: 80_080, budget: 77_500 },
 ];
 
 function RevenueTrendChart() {
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={TREND} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-        <XAxis dataKey="m" tick={{ fontSize: 9 }} stroke="var(--mute)" interval={1} />
-        <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v / 1000}k`} />
-        <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${Number(v ?? 0).toLocaleString()}k`, ""]} />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
-        <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
+    <WithDateRange data={TREND} presets={MONTH_PRESETS}>
+      {(filtered) => (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filtered} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+            <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+            <XAxis dataKey="m" tick={{ fontSize: 9 }} stroke="var(--mute)" interval={0} />
+            <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v / 1000}k`} />
+            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${Number(v ?? 0).toLocaleString()}k`, ""]} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </WithDateRange>
   );
 }
 

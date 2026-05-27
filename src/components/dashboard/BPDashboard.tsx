@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { Eyebrow } from "@/components/docs/shared";
 import { PNL, SCENARIOS, SYNERGIES, lineTotals } from "@/components/docs/bp/data";
+import { WithDateRange, MONTH_PRESETS } from "@/components/dashboard/TimeRangeFilter";
 
 export function BPDashboard() {
   return (
@@ -179,10 +180,13 @@ function SynergyQuadrant() {
 }
 
 function QuarterlyTrend() {
-  const months = ["Apr", "May", "Jun-fcst"] as const;
-  const data = months.map((m, idx) => {
-    const key = (["apr", "may", "jun"] as const)[idx];
-    const row: Record<string, number | string> = { m };
+  const months = [
+    { date: "2026-04-01", m: "Apr", key: "apr" as const },
+    { date: "2026-05-01", m: "May", key: "may" as const },
+    { date: "2026-06-01", m: "Jun-fcst", key: "jun" as const },
+  ];
+  const data: ({ date: string; m: string } & Record<string, number | string>)[] = months.map(({ date, m, key }) => {
+    const row: { date: string; m: string } & Record<string, number | string> = { date, m };
     PNL.forEach((l) => {
       row[l.id] = Math.round(lineTotals(l, key).revenue / 1_000_000);
     });
@@ -190,18 +194,22 @@ function QuarterlyTrend() {
   });
   const COLORS = ["var(--accent-green-deep)", "var(--accent-green)", "var(--mark-red)", "var(--mute)"];
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-        <XAxis dataKey="m" tick={{ fontSize: 11 }} stroke="var(--mute)" />
-        <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
-        <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${v}M`, ""]} />
-        <Legend wrapperStyle={{ fontSize: 10 }} />
-        {PNL.map((l, i) => (
-          <Line key={l.id} type="monotone" dataKey={l.id} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 2 }} />
-        ))}
-      </LineChart>
-    </ResponsiveContainer>
+    <WithDateRange data={data} presets={MONTH_PRESETS}>
+      {(filtered) => (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filtered} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+            <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+            <XAxis dataKey="m" tick={{ fontSize: 11 }} stroke="var(--mute)" />
+            <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${v}M`, ""]} />
+            <Legend wrapperStyle={{ fontSize: 10 }} />
+            {PNL.map((l, i) => (
+              <Line key={l.id} type="monotone" dataKey={l.id} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 2 }} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </WithDateRange>
   );
 }
 

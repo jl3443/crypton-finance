@@ -31,6 +31,7 @@ import { KPIStrip, type KPI } from "@/components/blocks/KPIStrip";
 import { PillButton } from "@/components/blocks/PillButton";
 import { PNL, lineTotals, SCENARIOS, SYNERGIES, FLAG_RECOMMENDATION } from "@/components/docs/bp/data";
 import { WALLETS, BANKS, ANOMALIES, totalUSDByChain, totalUSDByCustody, grandTotalUSD } from "@/components/docs/treasury/data";
+import { WithDateRange, MONTH_PRESETS, DAY_PRESETS } from "@/components/dashboard/TimeRangeFilter";
 import { cn } from "@/lib/utils";
 
 /**
@@ -198,12 +199,12 @@ function B({ children }: { children: React.ReactNode }) {
 // Accounting body — 4 sections
 // ─────────────────────────────────────────────────────────────────────
 const ACCT_TREND = [
-  { m: "Dec", actual: 73, budget: 71 },
-  { m: "Jan", actual: 71, budget: 72 },
-  { m: "Feb", actual: 73, budget: 74 },
-  { m: "Mar", actual: 76, budget: 75 },
-  { m: "Apr", actual: 75, budget: 76 },
-  { m: "May", actual: 80, budget: 78 },
+  { date: "2025-12-01", m: "Dec", actual: 73, budget: 71 },
+  { date: "2026-01-01", m: "Jan", actual: 71, budget: 72 },
+  { date: "2026-02-01", m: "Feb", actual: 73, budget: 74 },
+  { date: "2026-03-01", m: "Mar", actual: 76, budget: 75 },
+  { date: "2026-04-01", m: "Apr", actual: 75, budget: 76 },
+  { date: "2026-05-01", m: "May", actual: 80, budget: 78 },
 ];
 const ACCT_COSTS = [
   { bucket: "People", apr: 9.12, may: 9.29 },
@@ -248,17 +249,21 @@ function AccountingBody() {
           </>
         }
         chart={
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={ACCT_TREND} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-              <XAxis dataKey="m" tick={{ fontSize: 10 }} stroke="var(--mute)" />
-              <YAxis tick={{ fontSize: 10 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
-              <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v) => [`$${v}M`, ""]} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="3 3" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <WithDateRange data={ACCT_TREND} presets={MONTH_PRESETS}>
+            {(filtered) => (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filtered} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+                  <XAxis dataKey="m" tick={{ fontSize: 10 }} stroke="var(--mute)" />
+                  <YAxis tick={{ fontSize: 10 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+                  <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v) => [`$${v}M`, ""]} />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="budget" name="Budget" stroke="var(--accent-green)" strokeWidth={1.5} strokeDasharray="3 3" dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </WithDateRange>
         }
       />
       <Section
@@ -369,7 +374,11 @@ function AccountingBody() {
 const TREAS_FLOW = Array.from({ length: 30 }, (_, i) => {
   const base = 8 + Math.sin(i / 4) * 4;
   const weekend = ((i + 6) % 7 < 2) ? -3 : 0;
-  return { d: `${i + 1}`, net: Math.round((base + weekend + (i === 13 ? 18 : 0)) * 10) / 10 };
+  return {
+    date: `2026-04-${String(i + 1).padStart(2, "0")}`,
+    d: `${i + 1}`,
+    net: Math.round((base + weekend + (i === 13 ? 18 : 0)) * 10) / 10,
+  };
 });
 
 function TreasuryBody() {
@@ -487,15 +496,19 @@ function TreasuryBody() {
           </>
         }
         chart={
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={TREAS_FLOW} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-              <XAxis dataKey="d" tick={{ fontSize: 9 }} stroke="var(--mute)" interval={2} />
-              <YAxis tick={{ fontSize: 10 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
-              <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v) => [`$${v}M`, "Net"]} />
-              <Line type="monotone" dataKey="net" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <WithDateRange data={TREAS_FLOW} presets={DAY_PRESETS}>
+            {(filtered) => (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filtered} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+                  <XAxis dataKey="d" tick={{ fontSize: 9 }} stroke="var(--mute)" interval={2} />
+                  <YAxis tick={{ fontSize: 10 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+                  <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v) => [`$${v}M`, "Net"]} />
+                  <Line type="monotone" dataKey="net" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </WithDateRange>
         }
       />
       <Section

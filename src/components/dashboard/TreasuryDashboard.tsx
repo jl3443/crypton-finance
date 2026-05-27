@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { Eyebrow } from "@/components/docs/shared";
 import { BANKS, totalUSDByChain } from "@/components/docs/treasury/data";
+import { WithDateRange, DAY_PRESETS } from "@/components/dashboard/TimeRangeFilter";
 
 /**
  * TreasuryDashboard — 5-panel grid. Mounted on step 4 (Liquidity position)
@@ -126,20 +127,28 @@ const FLOW_30D = Array.from({ length: 30 }, (_, i) => {
   // Slightly noisy net flow centred around +$8M/day with weekend dips
   const base = 8 + Math.sin(i / 4) * 4;
   const weekend = ((i + 6) % 7 < 2) ? -3 : 0;
-  return { d: `${dayOfMonth}`, net: Math.round((base + weekend + (i === 13 ? 18 : 0)) * 10) / 10 };
+  return {
+    date: `2026-04-${String(dayOfMonth).padStart(2, "0")}`,
+    d: `${dayOfMonth}`,
+    net: Math.round((base + weekend + (i === 13 ? 18 : 0)) * 10) / 10,
+  };
 });
 
 function NetFlowChart() {
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={FLOW_30D} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
-        <XAxis dataKey="d" tick={{ fontSize: 10 }} stroke="var(--mute)" interval={2} />
-        <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
-        <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${v}M`, "Net"]} labelFormatter={(l) => `Day ${l}`} />
-        <Line type="monotone" dataKey="net" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
+    <WithDateRange data={FLOW_30D} presets={DAY_PRESETS}>
+      {(filtered) => (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filtered} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+            <CartesianGrid stroke="var(--divider)" strokeDasharray="2 3" vertical={false} />
+            <XAxis dataKey="d" tick={{ fontSize: 10 }} stroke="var(--mute)" interval={2} />
+            <YAxis tick={{ fontSize: 11 }} stroke="var(--mute)" tickFormatter={(v) => `$${v}M`} />
+            <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`$${v}M`, "Net"]} labelFormatter={(l) => `Day ${l}`} />
+            <Line type="monotone" dataKey="net" stroke="var(--accent-green-deep)" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </WithDateRange>
   );
 }
 
