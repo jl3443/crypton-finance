@@ -634,18 +634,12 @@ function BPBody() {
                   return [`${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(2)}M`, "Δ"];
                 }}
               />
-              <Bar dataKey="start" stackId="w" fill="transparent" />
+              <Bar dataKey="start" stackId="w" fill="var(--ink)" isAnimationActive={false} />
               <Bar
                 dataKey="height"
                 stackId="w"
                 radius={[2, 2, 0, 0]}
-                label={{
-                  position: "top",
-                  fontSize: 10,
-                  fill: "var(--ink)",
-                  formatter: (v: number) =>
-                    Math.abs(v) >= 0.4 ? `${v >= 0 ? "+" : "−"}$${Math.abs(v).toFixed(1)}M` : "",
-                }}
+                isAnimationActive={false}
               >
                 {waterfall.map((b, i) => (
                   <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green)" : "var(--mark-red)"} />
