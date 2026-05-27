@@ -121,7 +121,7 @@ export function DropZone({
               onClick={() => inputRef.current?.click()}
               disabled={parsing !== "idle"}
             >
-              Choose your XLSX
+              Upload
             </PillButton>
           </div>
           <div className="flex items-center gap-2 text-[11px] tracking-[0.08em] uppercase font-medium text-mute pt-1">
