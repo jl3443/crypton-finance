@@ -310,8 +310,8 @@ function PeriodWaterfall() {
           const pv = (p as { payload?: { value?: number } } | undefined)?.payload?.value ?? 0;
           return [`$${pv.toLocaleString()}k`, "Δ"];
         }} />
-        <Bar dataKey="start" stackId="w" fill="transparent" />
-        <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]}>
+        <Bar dataKey="start" stackId="w" fill="var(--ink)" isAnimationActive={false} />
+        <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]} isAnimationActive={false}>
           {bars.map((b, i) => (
             <Cell
               key={i}

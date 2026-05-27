@@ -80,11 +80,12 @@ export function RevenueWaterfall() {
                     return [`${v >= 0 ? "+" : "−"}$${Math.abs(v / 1_000_000).toFixed(2)}M`, "Δ"];
                   }}
                 />
-                <Bar dataKey="start" stackId="w" fill="transparent" />
+                <Bar dataKey="start" stackId="w" fill="var(--ink)" isAnimationActive={false} />
                 <Bar
                   dataKey="height"
                   stackId="w"
                   radius={[3, 3, 0, 0]}
+                  isAnimationActive={false}
                   label={{
                     position: "top",
                     fontSize: 11,

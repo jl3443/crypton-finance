@@ -103,8 +103,8 @@ function WaterfallChart() {
             return [`${v >= 0 ? "+" : "−"}$${Math.abs(v / 1_000_000).toFixed(2)}M`, "Δ"];
           }}
         />
-        <Bar dataKey="start" stackId="w" fill="transparent" />
-        <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]}>
+        <Bar dataKey="start" stackId="w" fill="var(--ink)" isAnimationActive={false} />
+        <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]} isAnimationActive={false}>
           {bars.map((b, i) => (
             <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green)" : "var(--mark-red)"} />
           ))}
