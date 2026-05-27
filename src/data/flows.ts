@@ -185,11 +185,12 @@ export const treasuryFlow: FlowDef = {
         "1,247 transactions auto-categorised across Operational / Customer / Hedging / Inter-co / Other.",
       time: "03:25",
       liveScripts: [
+        "Reading {filename} · {rows} rows across {sheets} sheets",
         "1,247 transactions · 94% auto-classified",
         "Operational · Customer · Hedging · Inter-co · Other",
         "73 transactions need human review",
       ],
-      docs: ["transaction-ledger-24h"],
+      docs: ["wallet-balance-sheet", "bank-account-summary", "transaction-ledger-24h"],
     },
     {
       title: "Anomaly detection",

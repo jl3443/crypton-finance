@@ -22,14 +22,27 @@ export type Artifact = {
 
 type Phase = "idle" | "running" | "done";
 
+export type CeremonyCopy = {
+  /** Eyebrow shown on idle state ("Final step · CFO sign-off"). */
+  introEyebrow: string;
+  /** Body paragraph on idle state. */
+  introBlurb: string;
+  /** Running-phase headline ("Routing approved entries · …"). */
+  runningHeadline: string;
+  /** Done-phase headline ("Close approved · routed to …"). */
+  doneHeadline: string;
+  /** Done-phase sub-line. */
+  doneSubline: string;
+};
+
 export function ExportCeremony({
   flow,
   artifacts,
-  introBlurb,
+  copy,
 }: {
   flow: FlowId;
   artifacts: Artifact[];
-  introBlurb: string;
+  copy: CeremonyCopy;
 }) {
   const { recordApproval, setFlowProgress, flowProgress, go } = useApp();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -86,11 +99,11 @@ export function ExportCeremony({
   if (phase === "idle") {
     return (
       <article className="bg-white border border-divider rounded-md p-8 ai-spring">
-        <Eyebrow>Final step · CFO sign-off</Eyebrow>
+        <Eyebrow>{copy.introEyebrow}</Eyebrow>
         <h2 className="text-[28px] font-bold text-ink leading-[32px] tracking-[-0.01em] pt-2 mb-3">
           Approve & export
         </h2>
-        <p className="text-[15px] text-ink leading-[24px] max-w-[680px] mb-5">{introBlurb}</p>
+        <p className="text-[15px] text-ink leading-[24px] max-w-[680px] mb-5">{copy.introBlurb}</p>
         <div className="space-y-2 mb-6">
           {artifacts.map((a) => (
             <div key={a.label} className="flex items-center gap-3 text-[13px]">
@@ -117,7 +130,7 @@ export function ExportCeremony({
       <article className="bg-white border border-divider rounded-md p-8 ai-spring">
         <Eyebrow>Drafting artifacts</Eyebrow>
         <h2 className="text-[24px] font-bold text-ink leading-[28px] tracking-[-0.01em] pt-2 mb-5">
-          Routing approved entries · assembling exports…
+          {copy.runningHeadline}
         </h2>
         <div className="space-y-3">
           {artifacts.map((a, i) => (
@@ -150,11 +163,9 @@ export function ExportCeremony({
         <div>
           <Eyebrow>All artifacts ready</Eyebrow>
           <h2 className="text-[24px] font-bold text-ink leading-[28px] tracking-[-0.01em] pt-1">
-            Close approved · routed to Oracle, sharepoint and audit log
+            {copy.doneHeadline}
           </h2>
-          <p className="text-[13px] text-mute leading-[20px] pt-1">
-            Download a copy below, or jump back into a doc to inspect what was sent.
-          </p>
+          <p className="text-[13px] text-mute leading-[20px] pt-1">{copy.doneSubline}</p>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-6">
@@ -212,6 +223,123 @@ export function ExportCeremony({
 // ────────────────────────────────────────────────────────────────────────
 // Builder helpers — make the 4 artifacts for the Accounting flow.
 // ────────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────────
+// Treasury artifacts — emitted when the treasury flow is approved.
+// ────────────────────────────────────────────────────────────────────────
+
+export function treasuryArtifacts(): Artifact[] {
+  return [
+    {
+      label: "Daily treasury brief · PDF",
+      filename: "crypton-treasury-brief-2026-05-28.html",
+      docId: "daily-treasury-brief",
+      generate: () =>
+        new Blob([buildTreasuryBriefHTML()], { type: "text/html;charset=utf-8" }),
+    },
+    {
+      label: "Rebalancing plan · JSON",
+      filename: "crypton-rebalancing-2026-05-28.json",
+      docId: "rebalancing-plan",
+      generate: () =>
+        new Blob(
+          [
+            JSON.stringify(
+              {
+                date: "2026-05-28",
+                move: { asset: "USDT", chain: "Ethereum", amountUSD: 80_000_000 },
+                source: { custody: "Anchorage Digital", wallet: "USDT-Cold-01" },
+                destination: { custody: "Fireblocks", wallet: "USDT-Hot-01" },
+                travelRule: { originator: "verified", beneficiary: "verified" },
+                approvedBy: "Wei Chen",
+                approvedAt: new Date().toISOString(),
+                etaHours: 4,
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        ),
+    },
+    {
+      label: "Anomaly ack log · JSON",
+      filename: "crypton-anomaly-ack-2026-05-28.json",
+      docId: "anomaly-brief",
+      generate: () =>
+        new Blob(
+          [
+            JSON.stringify(
+              {
+                date: "2026-05-28",
+                ackBy: "Wei Chen",
+                ackAt: new Date().toISOString(),
+                anomalies: [
+                  { id: "ANM-2026-05-28-001", title: "Large transfer to new whitelist", note: "Tied to Northstar OTC prime settlement." },
+                  { id: "ANM-2026-05-28-002", title: "Off-hours hot-wallet activity", note: "Same root cause as -001 · ack as single event." },
+                ],
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        ),
+    },
+    {
+      label: "Travel-rule audit · XML",
+      filename: "travel-rule-2026-05-28.xml",
+      generate: () =>
+        new Blob([buildTravelRuleXML()], { type: "application/xml;charset=utf-8" }),
+    },
+  ];
+}
+
+function buildTreasuryBriefHTML() {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>Crypton · Daily treasury brief 2026-05-28</title>
+<style>
+body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "DM Sans", sans-serif; color: #0b0b0e; max-width: 720px; margin: 60px auto; padding: 0 24px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #6b6660; }
+h1 { font-size: 30px; letter-spacing: -0.5px; margin: 0 0 8px; }
+h3 { margin: 24px 0 6px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #1f1b16; }
+strong { color: #0b0b0e; }
+table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+td { padding: 6px 8px; border-bottom: 1px solid #ecead9; }
+</style>
+</head><body>
+<div class="eyebrow">Internal · CFO desk · daily</div>
+<h1>Treasury daily brief · 2026-05-28</h1>
+<p>Group treasury closed the overnight at <strong>$8.41B</strong> USD-equivalent. Cold custody utilisation at 91%; hot float 8% below target. Recommended tonight: $80M USDT Anchorage → Fireblocks.</p>
+<h3>Position</h3>
+<table>
+  <tr><td>Crypto · Fireblocks (hot + warm)</td><td>$348M</td></tr>
+  <tr><td>Crypto · Anchorage (cold)</td><td>$5.99B</td></tr>
+  <tr><td>Fiat · banks (7 jurisdictions)</td><td>$210M</td></tr>
+</table>
+<h3>Approvals requested</h3>
+<ul>
+  <li>Rebalancing plan: $80M USDT Anchorage → Fireblocks · ETA T+4h</li>
+  <li>Anomaly ack: 2 events on ETH-Hot-02 (single root cause)</li>
+</ul>
+<p style="color:#6b6660; font-style:italic; margin-top:32px">Drafted by AI · reviewed by Wei Chen.</p>
+</body></html>`;
+}
+
+function buildTravelRuleXML() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<travelRule batch="2026-05-28" partner="chain-analytics-msb">
+  <transfer id="REB-2026-05-28-001">
+    <amountUSD>80000000</amountUSD>
+    <asset>USDT</asset>
+    <chain>Ethereum</chain>
+    <originator institution="Anchorage Digital" verifiedAt="2026-05-28T03:30:11Z" />
+    <beneficiary institution="Crypton Operational (Fireblocks)" verifiedAt="2026-05-28T03:30:11Z" />
+    <sanctionScreen ofac="0-match" eu="0-match" uk="0-match" sg="0-match" />
+    <approvedBy>Wei Chen</approvedBy>
+  </transfer>
+</travelRule>`;
+}
 
 export function accountingArtifacts(): Artifact[] {
   return [

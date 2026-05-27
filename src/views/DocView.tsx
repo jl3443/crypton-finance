@@ -9,6 +9,12 @@ import { JournalEntryProposal } from "@/components/docs/accounting/JournalEntryP
 import { VarianceCommentaryMemo } from "@/components/docs/accounting/VarianceCommentaryMemo";
 import { BoardFinancialReport } from "@/components/docs/accounting/BoardFinancialReport";
 import { CloseAuditTrail } from "@/components/docs/accounting/CloseAuditTrail";
+import { WalletBalanceSheet } from "@/components/docs/treasury/WalletBalanceSheet";
+import { BankAccountSummary } from "@/components/docs/treasury/BankAccountSummary";
+import { TransactionLedger24h } from "@/components/docs/treasury/TransactionLedger24h";
+import { AnomalyBrief } from "@/components/docs/treasury/AnomalyBrief";
+import { RebalancingPlan } from "@/components/docs/treasury/RebalancingPlan";
+import { DailyTreasuryBrief } from "@/components/docs/treasury/DailyTreasuryBrief";
 
 /**
  * Dispatcher — maps DocId → hand-built doc component. Docs not yet
@@ -33,6 +39,18 @@ export function DocView({ id }: { id: DocId }) {
       return <BoardFinancialReport />;
     case "close-audit-trail":
       return <CloseAuditTrail />;
+    case "wallet-balance-sheet":
+      return <WalletBalanceSheet />;
+    case "bank-account-summary":
+      return <BankAccountSummary />;
+    case "transaction-ledger-24h":
+      return <TransactionLedger24h />;
+    case "anomaly-brief":
+      return <AnomalyBrief />;
+    case "rebalancing-plan":
+      return <RebalancingPlan />;
+    case "daily-treasury-brief":
+      return <DailyTreasuryBrief />;
     default:
       return <ComingSoon id={id} />;
   }
@@ -68,12 +86,6 @@ function ComingSoon({ id }: { id: DocId }) {
 }
 
 const COMING_DAY: Partial<Record<DocId, string>> = {
-  "wallet-balance-sheet": "Day 4",
-  "bank-account-summary": "Day 4",
-  "transaction-ledger-24h": "Day 4",
-  "anomaly-brief": "Day 4",
-  "rebalancing-plan": "Day 4",
-  "daily-treasury-brief": "Day 4",
   "business-line-pnl": "Day 5",
   "revenue-waterfall": "Day 5",
   "cost-breakdown": "Day 5",

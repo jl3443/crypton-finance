@@ -6,7 +6,8 @@ import { PillButton } from "@/components/blocks/PillButton";
 import { DropZone, type DropZoneCopy } from "@/components/upload/DropZone";
 import { rememberUpload } from "@/lib/uploadCache";
 import { MultiChartDashboard } from "@/components/dashboard/MultiChartDashboard";
-import { ExportCeremony, accountingArtifacts, type Artifact } from "@/components/workspace/ExportCeremony";
+import { TreasuryDashboard } from "@/components/dashboard/TreasuryDashboard";
+import { ExportCeremony, accountingArtifacts, treasuryArtifacts, type Artifact, type CeremonyCopy } from "@/components/workspace/ExportCeremony";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,6 +24,13 @@ const DROPZONE_COPY: Partial<Record<FlowId, DropZoneCopy>> = {
     sheetsHint: "Expected sheets: GL_Detail · TB_May · AP_Aging · AR_Aging.",
     sampleFile: "/samples/crypton-may-gl-extract.xlsx",
     sampleDisplayName: "crypton-may-gl-extract.xlsx",
+  },
+  treasury: {
+    eyebrow: "Step 1 · Pull balances",
+    title: "Drop a treasury statement to begin",
+    sheetsHint: "Expected sheets: Wallets · BankAccounts · Transactions_24h.",
+    sampleFile: "/samples/crypton-treasury-statements.xlsx",
+    sampleDisplayName: "crypton-treasury-statements.xlsx",
   },
 };
 
@@ -54,9 +62,10 @@ export function Workspace({ flow }: { flow: FlowId }) {
   const showDropZone =
     activeStep === 0 && DROPZONE_COPY[flow] !== undefined;
 
-  // Multi-chart dashboard mounts alongside the step content on the
-  // "Financial report assembly" step of the accounting flow (index 6).
-  const showDashboard = flow === "accounting" && activeStep === 6;
+  // Dashboards mount alongside step content. Accounting: step 6 (Financial
+  // report assembly). Treasury: step 3 (Liquidity position).
+  const showAccountingDashboard = flow === "accounting" && activeStep === 6;
+  const showTreasuryDashboard = flow === "treasury" && activeStep === 3;
 
   // Export ceremony replaces the placeholder card on the final step.
   const showExport = activeStep === totalSteps - 1 && exportArtifactsFor(flow).length > 0;
@@ -124,7 +133,7 @@ export function Workspace({ flow }: { flow: FlowId }) {
             <ExportCeremony
               flow={flow}
               artifacts={exportArtifactsFor(flow)}
-              introBlurb={exportBlurbFor(flow)}
+              copy={ceremonyCopyFor(flow)}
             />
           ) : (
             <>
@@ -136,12 +145,20 @@ export function Workspace({ flow }: { flow: FlowId }) {
                 onNext={goNext}
                 onDocClick={(id) => go({ kind: "doc", id })}
               />
-              {showDashboard && (
+              {showAccountingDashboard && (
                 <section className="pt-8">
                   <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
                     Close dashboard · embedded in the board pack
                   </div>
                   <MultiChartDashboard />
+                </section>
+              )}
+              {showTreasuryDashboard && (
+                <section className="pt-8">
+                  <div className="text-[10px] tracking-[0.18em] uppercase font-medium text-mute mb-3">
+                    Liquidity dashboard · live position
+                  </div>
+                  <TreasuryDashboard />
                 </section>
               )}
             </>
@@ -154,14 +171,38 @@ export function Workspace({ flow }: { flow: FlowId }) {
 
 function exportArtifactsFor(flow: FlowId): Artifact[] {
   if (flow === "accounting") return accountingArtifacts();
+  if (flow === "treasury") return treasuryArtifacts();
   return [];
 }
 
-function exportBlurbFor(flow: FlowId): string {
+function ceremonyCopyFor(flow: FlowId): CeremonyCopy {
   if (flow === "accounting") {
-    return "Sign off the four adjusting entries (JE-0429 to 0432), the variance memo, the board financial report, and the close audit trail. On approval, AI routes entries to Oracle's nightly batch, files the memo + report to Sharepoint, and locks the audit trail.";
+    return {
+      introEyebrow: "Final step · CFO sign-off",
+      introBlurb:
+        "Sign off the four adjusting entries (JE-0429 to 0432), the variance memo, the board financial report, and the close audit trail. On approval, AI routes entries to Oracle's nightly batch, files the memo + report to Sharepoint, and locks the audit trail.",
+      runningHeadline: "Routing approved entries · assembling exports…",
+      doneHeadline: "Close approved · routed to Oracle, Sharepoint and audit log",
+      doneSubline: "Download a copy below, or jump back into a doc to inspect what was sent.",
+    };
   }
-  return "Approve to route the artifacts and lock the audit trail.";
+  if (flow === "treasury") {
+    return {
+      introEyebrow: "Final step · CFO sign-off",
+      introBlurb:
+        "Approve the $80M USDT rebalancing (Anchorage → Fireblocks) and ack the two anomalies as one event. On approval, the travel-rule + sanction checks lock, the brief files with morning ops, and the Fireblocks API receives the signed instruction.",
+      runningHeadline: "Travel-rule check · Fireblocks submission · Anchorage withdrawal…",
+      doneHeadline: "Rebalancing initiated · ETA 4h · brief filed with morning ops",
+      doneSubline: "Fireblocks signed instruction posted. Anchorage withdrawal cleared.",
+    };
+  }
+  return {
+    introEyebrow: "Final step · CFO sign-off",
+    introBlurb: "Approve to route the artifacts and lock the audit trail.",
+    runningHeadline: "Routing artifacts…",
+    doneHeadline: "Approved · artifacts routed",
+    doneSubline: "Download or open any artifact below.",
+  };
 }
 
 function StepPlaceholderCard({

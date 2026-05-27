@@ -303,10 +303,136 @@ function makeWorkbookGL() {
   return wb;
 }
 
-const wb = makeWorkbookGL();
-const outPath = resolve(OUT_DIR, "crypton-may-gl-extract.xlsx");
-const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-writeFileSync(outPath, buf);
-console.log(`Wrote ${outPath}`);
-console.log(`  Sheets: ${wb.SheetNames.join(", ")}`);
-console.log(`  Size: ${(buf.length / 1024).toFixed(1)} KB`);
+// ─────────────────────────────────────────────────────────────────────
+// Treasury workbook — wallets · banks · 24h transactions
+// ─────────────────────────────────────────────────────────────────────
+
+const CHAINS = ["Bitcoin", "Ethereum", "Solana", "Tron", "Polygon", "Arbitrum"];
+const WALLET_LABELS = {
+  Bitcoin: ["BTC-Hot-01", "BTC-Hot-02", "BTC-Warm-01", "BTC-Cold-01", "BTC-Cold-02"],
+  Ethereum: ["ETH-Hot-01", "ETH-Hot-02", "ETH-Warm-01", "ETH-Cold-01", "ETH-Cold-02"],
+  Solana: ["SOL-Hot-01", "SOL-Warm-01", "SOL-Cold-01"],
+  Tron: ["TRX-Hot-01", "TRX-Warm-01"],
+  Polygon: ["MATIC-Hot-01", "MATIC-Warm-01", "MATIC-Cold-01"],
+  Arbitrum: ["ARB-Hot-01", "ARB-Warm-01", "ARB-Cold-01"],
+};
+const CUSTODY_FOR_CLASS = {
+  Hot: "Fireblocks",
+  Warm: "Fireblocks",
+  Cold: "Anchorage Digital",
+};
+
+function buildWallets() {
+  const rows = [["WalletID", "Chain", "Class", "Custody", "BalanceUSD", "LastSyncUTC", "WhitelistMembers"]];
+  for (const chain of CHAINS) {
+    for (const label of WALLET_LABELS[chain] ?? []) {
+      const cls = label.includes("Hot") ? "Hot" : label.includes("Warm") ? "Warm" : "Cold";
+      const balance =
+        cls === "Cold"
+          ? Math.exp(between(19, 21.5))   // ~150M-3B in cold
+          : cls === "Warm"
+            ? Math.exp(between(16, 18.5)) // ~10M-100M in warm
+            : Math.exp(between(13.5, 16)); // ~700K-9M in hot
+      rows.push([
+        label,
+        chain,
+        cls,
+        CUSTODY_FOR_CLASS[cls],
+        round(balance, 0),
+        `2026-05-28T03:${pick(["12", "22", "34", "48"])}:${pick(["09", "21", "33", "47"])}Z`,
+        Math.floor(between(6, 24)),
+      ]);
+    }
+  }
+  return rows;
+}
+
+const BANKS = [
+  { name: "JPMorgan Chase · USD", jurisdiction: "US", ccy: "USD" },
+  { name: "HSBC · GBP / EUR multi-ccy", jurisdiction: "UK", ccy: "GBP" },
+  { name: "DBS Singapore · SGD", jurisdiction: "SG", ccy: "SGD" },
+  { name: "Standard Chartered HK · HKD", jurisdiction: "HK", ccy: "HKD" },
+  { name: "Emirates NBD · AED", jurisdiction: "AE", ccy: "AED" },
+  { name: "Butterfield Cayman · USD", jurisdiction: "KY", ccy: "USD" },
+  { name: "Sygnum Bank · CHF / USD", jurisdiction: "CH", ccy: "CHF" },
+];
+
+function buildBanks() {
+  const rows = [["BankAccount", "Jurisdiction", "Currency", "BalanceUSDEquiv", "Status"]];
+  for (const b of BANKS) {
+    const usdEquiv = round(Math.exp(between(15, 18.5)), 0); // ~3M-100M
+    rows.push([b.name, b.jurisdiction, b.ccy, usdEquiv, "Active"]);
+  }
+  return rows;
+}
+
+const TXN_CATEGORIES = ["Operational", "Customer flow", "Hedging", "Inter-co", "Other"];
+const COUNTERPARTIES = [
+  "Fireblocks API",
+  "Anchorage Digital",
+  "JPMorgan ACH",
+  "DBS SWIFT",
+  "HSBC SWIFT",
+  "Northstar Capital OTC",
+  "Aurora Trading OTC",
+  "Meridian Quant OTC",
+  "User-deposit batch",
+  "User-withdrawal batch",
+  "AWS billing",
+  "Chainalysis billing",
+  "Inter-co · Group SG",
+  "Inter-co · Group CH",
+  "Settlement sweep",
+];
+
+function buildTransactions() {
+  const rows = [
+    ["Timestamp", "Counterparty", "Category", "AmountUSD", "Direction", "WalletOrBank", "ClassifiedBy"],
+  ];
+  const base = new Date("2026-05-28T03:30:00Z").getTime();
+  for (let i = 0; i < 1247; i++) {
+    const dt = new Date(base - Math.floor(between(0, 86400)) * 1000);
+    const cat = pick(TXN_CATEGORIES);
+    const amount = round(Math.exp(between(6, 16.5)), 2);
+    const direction = pick(["in", "out", "out", "in"]);
+    const isAnomaly = i < 2;
+    rows.push([
+      dt.toISOString(),
+      isAnomaly
+        ? i === 0
+          ? "0xNEW...new-whitelist"
+          : "Hot-04 (off-hours)"
+        : pick(COUNTERPARTIES),
+      cat,
+      isAnomaly ? (i === 0 ? 42_000_000 : amount) : amount,
+      direction,
+      pick(["ETH-Hot-01", "BTC-Hot-01", "USDT-Hot-01", "JPM-USD", "DBS-SGD"]),
+      Math.random() < 0.94 ? "AI auto" : "Human review",
+    ]);
+  }
+  return rows;
+}
+
+function makeWorkbookTreasury() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildWallets()), "Wallets");
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildBanks()), "BankAccounts");
+  XLSX.utils.book_append_sheet(wb, aoaToSheet(buildTransactions()), "Transactions_24h");
+  return wb;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Emit both workbooks
+// ─────────────────────────────────────────────────────────────────────
+
+function emit(wb, name) {
+  const outPath = resolve(OUT_DIR, name);
+  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  writeFileSync(outPath, buf);
+  console.log(`Wrote ${outPath}`);
+  console.log(`  Sheets: ${wb.SheetNames.join(", ")}`);
+  console.log(`  Size: ${(buf.length / 1024).toFixed(1)} KB`);
+}
+
+emit(makeWorkbookGL(), "crypton-may-gl-extract.xlsx");
+emit(makeWorkbookTreasury(), "crypton-treasury-statements.xlsx");
