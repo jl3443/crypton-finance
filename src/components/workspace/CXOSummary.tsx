@@ -186,7 +186,7 @@ function Section({
         <h3 className="text-[16px] font-bold text-ink leading-[20px] tracking-[-0.01em] mb-2">{title}</h3>
         <div className="text-[13px] text-ink leading-[22px] space-y-2">{body}</div>
       </div>
-      <div className="rounded-md bg-surface-mint/60 border border-divider p-3 h-[220px]">{chart}</div>
+      <div className="rounded-md bg-white border border-divider p-3 h-[220px]">{chart}</div>
     </section>
   );
 }
@@ -629,7 +629,7 @@ function BPBody() {
               <Bar dataKey="start" stackId="w" fill="transparent" />
               <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]}>
                 {waterfall.map((b, i) => (
-                  <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green-deep)" : "var(--mark-red)"} />
+                  <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green)" : "var(--mark-red)"} />
                 ))}
               </Bar>
             </BarChart>

@@ -319,7 +319,7 @@ function PeriodWaterfall() {
                 b.kind === "anchor"
                   ? "var(--ink)"
                   : b.kind === "up"
-                    ? "var(--accent-green-deep)"
+                    ? "var(--accent-green)"
                     : "var(--mark-red)"
               }
             />

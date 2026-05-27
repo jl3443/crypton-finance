@@ -98,7 +98,7 @@ function WaterfallChart() {
         <Bar dataKey="start" stackId="w" fill="transparent" />
         <Bar dataKey="height" stackId="w" radius={[2, 2, 0, 0]}>
           {bars.map((b, i) => (
-            <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green-deep)" : "var(--mark-red)"} />
+            <Cell key={i} fill={b.kind === "anchor" ? "var(--ink)" : b.kind === "up" ? "var(--accent-green)" : "var(--mark-red)"} />
           ))}
         </Bar>
       </BarChart>
